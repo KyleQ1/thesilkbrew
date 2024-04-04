@@ -54,6 +54,8 @@ def search_orders(
     time is 5 total line items.
     """
 
+    print("search_orders")
+    print(f"customer_name: {customer_name} potion_sku: {potion_sku} search_page: {search_page} sort_col: {sort_col} sort_order: {sort_order}", flush=True)
     return {
         "previous": "",
         "next": "",
@@ -79,7 +81,8 @@ def post_visits(visit_id: int, customers: list[Customer]):
     """
     Which customers visited the shop today?
     """
-    print(customers)
+    print("post_visits")
+    print(f"visit_id: {visit_id} customers: {customers}", flush=True)
 
     return "OK"
 
@@ -87,6 +90,8 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
+    print("create_cart")
+    print(f"new_cart: {new_cart}", flush=True)
     return {"cart_id": 1}
 
 
@@ -97,7 +102,8 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-
+    print("set_item_quantity")
+    print(f"cart_id: {cart_id} item_sku: {item_sku} cart_item: {cart_item}", flush=True)
     return "OK"
 
 
@@ -107,5 +113,6 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-
+    print("checkout")
+    print(f"cart_id: {cart_id} cart_checkout: {cart_checkout}", flush=True)
     return {"total_potions_bought": 1, "total_gold_paid": 50}

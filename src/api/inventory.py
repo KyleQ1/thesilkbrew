@@ -14,7 +14,7 @@ router = APIRouter(
 @router.get("/audit")
 def get_inventory():
     """ """
-    
+    print("get_inventory", flush=True)
     return {"number_of_potions": 0, "ml_in_barrels": 0, "gold": 0}
 
 # Gets called once a day
@@ -24,7 +24,7 @@ def get_capacity_plan():
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
-
+    print("get_capacity_plan", flush=True)
     return {
         "potion_capacity": 0,
         "ml_capacity": 0
@@ -41,5 +41,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
+    print("deliver_capacity_plan")
+    print(f"capacity_purchase: {capacity_purchase} order_id: {order_id}", flush=True)
 
     return "OK"
