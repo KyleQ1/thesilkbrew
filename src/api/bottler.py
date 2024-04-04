@@ -4,6 +4,10 @@ from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
 from src import database as db
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/bottler",
@@ -34,18 +38,32 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
 
-    test = []
+    green_ml_available = False
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory"))
         for row in result:
-            print(row)
+            green_ml = row[0]
+            if green_ml >= 100:  
+                green_ml_available = True
+                break
 
-    return [
+    # Create 5 green potions if green ml is available.
+    if green_ml_available:
+        return [
             {
-                "potion_type": [100, 0, 0, 0],
+                "potion_type": [0, 0, 100, 0],
                 "quantity": 5,
             }
         ]
+    # Otherwise, create 0 potions.
+    else:
+        return [
+            {
+                "potion_type": [0, 0, 0, 0],
+                "quantity": 0,
+            }
+        ]
+        
 
 if __name__ == "__main__":
     print(get_bottle_plan())
