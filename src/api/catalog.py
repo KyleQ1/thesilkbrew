@@ -14,7 +14,7 @@ def get_catalog():
     # TODO: test
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
-        green_potions = result.fetchone()['num_green_potions']
+        green_potions = result.fetchone()[0]
 
     return [
             {
@@ -22,6 +22,6 @@ def get_catalog():
                 "name": "green potion",
                 "quantity": green_potions,
                 "price": 49,
-                "potion_type": [0, 0, 100, 0],
+                "potion_type": [0, 100, 0, 0],
             }
         ]
