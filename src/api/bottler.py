@@ -54,12 +54,7 @@ def get_bottle_plan():
         ]
     # Otherwise, create 0 potions.
     else:
-        return [
-            {
-                "potion_type": [0, 0, 0, 0],
-                "quantity": 0,
-            }
-        ]
+        return []
         
 
 if __name__ == "__main__":

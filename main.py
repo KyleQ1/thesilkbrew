@@ -1,4 +1,5 @@
 import uvicorn
+from src import logging_config
 
 if __name__ == "__main__":
     config = uvicorn.Config(
@@ -6,3 +7,4 @@ if __name__ == "__main__":
     )
     server = uvicorn.Server(config)
     server.run()
+    logging_config.setup_logging()

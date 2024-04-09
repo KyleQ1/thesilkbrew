@@ -23,6 +23,10 @@ class Barrel(BaseModel):
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
+    with db.engine.begin() as connection:
+        for barrel in barrels_delivered:
+            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold - {barrel.price}"))
+            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = num_green_ml + {barrel.ml_per_barrel}"))
 
     return "OK"
 
@@ -40,7 +44,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             if green_potions < 10:  
                 green_potions_needed = True
                 break
-        results2 = connection.exectue(sqlalchemy.text("SELECT gold from global_inventory"))
+        results2 = connection.execute(sqlalchemy.text("SELECT gold from global_inventory"))
         for row in results2:
             gold = row[0]
     
@@ -49,6 +53,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         # Find a small green potion barrel in the wholesale catalog and add it to the purchase plan.
         for barrel in wholesale_catalog:
             if barrel.potion_type == [0, 100, 0, 0] and gold >= barrel.price:
+                # TODO: purchase more than 1 barrel
                 purchase_plan.append({"sku": barrel.sku, "quantity": 1})
                 break
 
