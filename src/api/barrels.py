@@ -40,6 +40,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         catalog[barrel.sku] = barrel
     
     green_potions_needed = False
+    gold = 0
     with db.engine.begin() as connection:
         result1 = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
         for row in result1:
