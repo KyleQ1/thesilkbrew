@@ -35,6 +35,10 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     print(wholesale_catalog)
+    catalog = {}
+    for barrel in wholesale_catalog:
+        catalog[barrel.sku] = barrel
+    
     green_potions_needed = False
     with db.engine.begin() as connection:
         result1 = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
