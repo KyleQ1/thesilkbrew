@@ -22,13 +22,13 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}", flush=True)
     with db.engine.begin() as connection:
         for potion in potions_delivered:
-            if potion.potion_type == [100, 0, 0, 0]:
+            if potion.potion_type == [1, 0, 0, 0]:
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = num_red_potions + {potion.quantity}"))
-            elif potion.potion_type == [0, 100, 0, 0]:
+            elif potion.potion_type == [0, 1, 0, 0]:
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions + {potion.quantity}"))
-            elif potion.potion_type == [0, 0, 100, 0]:
+            elif potion.potion_type == [0, 0, 1, 0]:
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_potions = num_blue_potions + {potion.quantity}"))
-            elif potion.potion_type == [0, 0, 0, 100]:
+            elif potion.potion_type == [0, 0, 0, 1]:
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_dark_potions = num_dark_potions + {potion.quantity}"))
 
     return "OK"
