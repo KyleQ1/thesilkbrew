@@ -58,7 +58,7 @@ def get_bottle_plan():
     if green_ml_available:
         return [
             {
-                "potion_type": [0, 100, 0, 0],
+                "potion_type": [0, 1, 0, 0],
                 "quantity": 5,
             }
         ]
