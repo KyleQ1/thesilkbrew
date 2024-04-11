@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
 from src import database as db
+import random
 
 router = APIRouter(
     prefix="/bottler",
@@ -36,11 +37,63 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     with db.engine.begin() as connection:
         for potion in potions_delivered:
             color = get_potion_color(potion.potion_type)
+            print(potion.potion_type)
             if color != None:
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_{color}_potions = num_{color}_potions + {potion.quantity}"))
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_{color}_ml = num_{color}_ml - {potion.quantity * 100}"))
 
     return "OK"
+
+# TODO: Base it off what the customers want.
+def random_bottle_order(red_ml, green_ml, blue_ml):
+    colors = ['red', 'blue', 'green']
+    color1 = random.sample(colors)
+    color2 = random.sample(colors)
+    while color2 == color1:
+        color2 = random.sample(colors)
+    total = 100
+    first = random.randint(1, 100)
+    second = random.randint(1, 100 - first)
+    third = total - first - second
+    return {
+        color1: first,
+        color2: second,
+        colors[3 - colors.index(color1) - colors.index(color2)]: third
+    }
+
+def easy_bottle_plan(red_ml, green_ml, blue_ml):
+    """
+    Bottles all barrels into red potions.
+    """
+    purchase_plan = []
+    if red_ml > 100:
+        purchase_plan.append({
+            "potion_type": [100, 0, 0, 0],
+            "quantity": (red_ml // 100),
+        })
+    if green_ml > 100:
+        purchase_plan.append({
+            "potion_type": [100, 0, 0, 0],
+            "quantity": (green_ml // 100),
+        })
+    if blue_ml > 100:
+        purchase_plan.append({
+            "potion_type": [100, 0, 0, 0],
+            "quantity": (blue_ml // 100),
+        })
+
+    return purchase_plan
+
+def get_ml():
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml FROM global_inventory"))
+        result = result.fetchone()
+        green_ml = result[0]
+        red_ml = result[1]
+        blue_ml = result[2]
+        dark_ml = result[3]
+    return red_ml, green_ml, blue_ml, dark_ml
+
 
 @router.post("/plan")
 def get_bottle_plan():
@@ -54,27 +107,9 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
     print("get_bottle_plan", flush=True)
-    green_ml_available = False
-    green_ml = 0
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory"))
-        for row in result:
-            green_ml = row[0]
-            if green_ml >= 100:  
-                green_ml_available = True
-                break
-
-    # Create 5 green potions if green ml is available.
-    if green_ml_available:
-        return [
-            {
-                "potion_type": [0, 1, 0, 0],
-                "quantity": (green_ml // 100),
-            }
-        ]
-    # Otherwise, create 0 potions.
-    else:
-        return []
+    red, green, blue, dark = get_ml()
+    return easy_bottle_plan(red, green, blue)
+    
         
 
 if __name__ == "__main__":

@@ -19,14 +19,69 @@ class Barrel(BaseModel):
 
     quantity: int
 
+def get_potion_color(potion_type: list[int]):
+    if potion_type == [1, 0, 0, 0]:
+        return "red"
+    elif potion_type == [0, 1, 0, 0]:
+        return "green"
+    elif potion_type == [0, 0, 1, 0]:
+        return "blue"
+    elif potion_type == [0, 0, 0, 1]:
+        return "dark"
+    else:
+        print("Invalid potion type when bottling", flush=True)
+        return None
+
+# Sort potions needed by total ml stored
+# TODO: Sort using total potions too
+def get_potion_buying_order():
+    potion_buying_order = {}
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml FROM global_inventory"))
+        result = result.fetchone()
+        potion_buying_order["green"] = result[0]
+        potion_buying_order["red"] = result[1]
+        potion_buying_order["blue"] = result[2]
+        potion_buying_order["dark"] = result[3]
+    potion_buying_order = dict(sorted(potion_buying_order.items(), key=lambda item: item[1]))
+    return potion_buying_order
+
+def get_gold():
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("SELECT gold from global_inventory"))
+        result = result.fetchone()
+        return result[0]
+
+    
+# Determines which barrels should be bought
+# Prioritizes buying larger barrels as they have higher ROI
+# ml ber barrel is 2500, 500, 200
+# Prices are 250, 100, 60
+def get_size(gold, type_potion, catalog):
+    type_potion = type_potion.upper()
+    if f"MEDIUM_{type_potion}_BARREL" in catalog and gold >= catalog[f"MEDIUM_{type_potion}_BARREL"].price:
+        return f"MEDIUM_{type_potion}_BARREL"
+    elif "SMALL_RED_BARREL" in catalog and gold >= catalog["SMALL_RED_BARREL"].price:
+        return f"SMALL_{type_potion}_BARREL"
+    elif f"MINI_{type_potion}_BARREL" in catalog and gold >= catalog[f"MINI_{type_potion}_BARREL"].price:
+        return f"MINI_{type_potion}_BARREL"
+    return None    
+
+# TODO: Determine total barrels to get based off ml/potions
+def get_quantity():
+    return 1
+
+
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
     with db.engine.begin() as connection:
         for barrel in barrels_delivered:
-            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold - {barrel.price}"))
-            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = num_green_ml + {barrel.ml_per_barrel}"))
+            color = get_potion_color(barrel.potion_type)
+            if color != None:
+                connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold - {barrel.price}"))
+                connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_{color}_ml = num_{color}_ml + {barrel.ml_per_barrel}"))
 
     return "OK"
 
@@ -34,33 +89,27 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
-    print(wholesale_catalog)
+    print("get_wholesale_purchase_plan")
     catalog = {}
     for barrel in wholesale_catalog:
         catalog[barrel.sku] = barrel
+    print(f"catalog: {catalog}")
     
-    green_potions_needed = False
-    gold = 0
-    with db.engine.begin() as connection:
-        result1 = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
-        for row in result1:
-            # Check if less than 10 green potions in inventory.
-            green_potions = row[0]
-            if green_potions < 10:  
-                green_potions_needed = True
-                break
-        results2 = connection.execute(sqlalchemy.text("SELECT gold from global_inventory"))
-        for row in results2:
-            gold = row[0]
-    
-    purchase_plan = []
-    if green_potions_needed:
-        # Find a small green potion barrel in the wholesale catalog and add it to the purchase plan.
-        for barrel in wholesale_catalog:
-            if barrel.potion_type == [0, 1, 0, 0] and gold >= barrel.price:
-                # TODO: purchase more than 1 barrel
-                purchase_plan.append({"sku": barrel.sku, "quantity": 1})
-                break
+    gold = get_gold()
 
-    return purchase_plan
+    order = get_potion_buying_order()
+    purhcase_plan = []
+    for type_potion, ml in order.items():
+        print(f"potion: {type_potion}  total_ml: {ml}")
+        # change to total potions perhaps
+        if ml < 10000:
+            print(gold)
+            size = get_size(gold, type_potion, catalog)
+            quantity = get_quantity()
+            print(f"purchase: {size} {quantity}")
+            if size:
+                purhcase_plan.append([{"sku": size, "quantity": 1}])
+                gold -= catalog[size].price * quantity
+    return purhcase_plan
+    
 
