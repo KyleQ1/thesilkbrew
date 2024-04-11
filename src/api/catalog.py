@@ -4,6 +4,15 @@ from src import database as db
 
 router = APIRouter()
 
+def get_potions():
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("SELECT num_red_potions, num_green_potions, num_blue_potions, num_dark_potions FROM global_inventory"))
+        result = result.fetchone()
+        red_potions = result[0]
+        green_potions = result[1]
+        blue_potions = result[2]
+        dark_potions = result[3]
+    return red_potions, green_potions, blue_potions, dark_potions
 
 @router.get("/catalog/", tags=["catalog"])
 def get_catalog():
@@ -12,18 +21,20 @@ def get_catalog():
     """
     print("get_catalog", flush=True)
     # TODO: test
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
-        green_potions = result.fetchone()[0]
-    if green_potions == 0:
-        return []
-
-    return [
-            {
-                "sku": "GREEN_POTION_0",
-                "name": "green potion",
-                "quantity": green_potions,
+    red, blue, green, dark = get_potions()
+    selling_plan = []
+    potions = [("red", red, [1, 0, 0, 0]), ("green", green, [0, 1, 0, 0]), 
+               ("blue", blue, [0, 0, 1, 0]), ("dark", dark, [0, 0, 0, 1])]
+    for potion in potions:
+        color = potion[0]
+        quantity = potion[1]
+        potion_type = potion[2]
+        if quantity > 0:
+            selling_plan.append({
+                "sku": f"{color.upper()}_POTION_0",
+                "name": f"{color} potion",
+                "quantity": quantity,
                 "price": 49,
-                "potion_type": [0, 1, 0, 0],
-            }
-        ]
+                "potion_type": potion_type,
+            })
+    return selling_plan
