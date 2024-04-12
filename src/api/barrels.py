@@ -48,14 +48,14 @@ def get_potion_buying_order():
 
 def get_gold():
     with db.engine.begin() as connection:
-        return connection.execute(sqlalchemy.text("SELECT gold from global_inventory")).first()
+        return connection.execute(sqlalchemy.text("SELECT gold from global_inventory")).first()[0]
     
 # Determines which barrels should be bought
 # Prioritizes buying larger barrels as they have higher ROI
 # ml ber barrel is 2500, 500, 200
 # Prices are 250, 100, 60
 def get_size(gold, type_potion, catalog):
-    type_potion = type_potion.upper()
+    print(catalog[f"SMALL_RED_BARREL"].price, flush=True)
     if f"LARGE_{type_potion}_BARREL" in catalog and gold >= catalog[f"LARGE_{type_potion}_BARREL"].price:
         return f"LARGE_{type_potion}_BARREL"
     elif f"MEDIUM_{type_potion}_BARREL" in catalog and gold >= catalog[f"MEDIUM_{type_potion}_BARREL"].price:
