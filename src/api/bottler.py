@@ -44,23 +44,6 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
     return "OK"
 
-# TODO: Base it off what the customers want.
-def random_bottle_order(red_ml, green_ml, blue_ml):
-    colors = ['red', 'blue', 'green']
-    color1 = random.sample(colors)
-    color2 = random.sample(colors)
-    while color2 == color1:
-        color2 = random.sample(colors)
-    total = 100
-    first = random.randint(1, 100)
-    second = random.randint(1, 100 - first)
-    third = total - first - second
-    return {
-        color1: first,
-        color2: second,
-        colors[3 - colors.index(color1) - colors.index(color2)]: third
-    }
-
 def easy_bottle_plan(red_ml, green_ml, blue_ml):
     """
     Bottles all barrels into red potions.
@@ -81,18 +64,14 @@ def easy_bottle_plan(red_ml, green_ml, blue_ml):
             "potion_type": [100, 0, 0, 0],
             "quantity": (blue_ml // 100),
         })
+    
+    print(purchase_plan, flush=True)
 
     return purchase_plan
 
 def get_ml():
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml FROM global_inventory"))
-        result = result.fetchone()
-        green_ml = result[0]
-        red_ml = result[1]
-        blue_ml = result[2]
-        dark_ml = result[3]
-    return red_ml, green_ml, blue_ml, dark_ml
+        return connection.execute(sqlalchemy.text("""SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml FROM global_inventory""")).first()
 
 
 @router.post("/plan")
@@ -110,7 +89,24 @@ def get_bottle_plan():
     red, green, blue, dark = get_ml()
     return easy_bottle_plan(red, green, blue)
     
-        
+
+"""
+def random_bottle_order(red_ml, green_ml, blue_ml):
+    colors = ['red', 'blue', 'green']
+    color1 = random.sample(colors)
+    color2 = random.sample(colors)
+    while color2 == color1:
+        color2 = random.sample(colors)
+    total = 100
+    first = random.randint(1, 100)
+    second = random.randint(1, 100 - first)
+    third = total - first - second
+    return {
+        color1: first,
+        color2: second,
+        colors[3 - colors.index(color1) - colors.index(color2)]: third
+    }
+"""  
 
 if __name__ == "__main__":
     print(get_bottle_plan())

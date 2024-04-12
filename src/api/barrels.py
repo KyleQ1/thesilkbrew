@@ -48,10 +48,7 @@ def get_potion_buying_order():
 
 def get_gold():
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT gold from global_inventory"))
-        result = result.fetchone()
-        return result[0]
-
+        return connection.execute(sqlalchemy.text("SELECT gold from global_inventory")).first()
     
 # Determines which barrels should be bought
 # Prioritizes buying larger barrels as they have higher ROI
@@ -59,9 +56,11 @@ def get_gold():
 # Prices are 250, 100, 60
 def get_size(gold, type_potion, catalog):
     type_potion = type_potion.upper()
-    if f"MEDIUM_{type_potion}_BARREL" in catalog and gold >= catalog[f"MEDIUM_{type_potion}_BARREL"].price:
+    if f"LARGE_{type_potion}_BARREL" in catalog and gold >= catalog[f"LARGE_{type_potion}_BARREL"].price:
+        return f"LARGE_{type_potion}_BARREL"
+    elif f"MEDIUM_{type_potion}_BARREL" in catalog and gold >= catalog[f"MEDIUM_{type_potion}_BARREL"].price:
         return f"MEDIUM_{type_potion}_BARREL"
-    elif "SMALL_RED_BARREL" in catalog and gold >= catalog["SMALL_RED_BARREL"].price:
+    elif f"SMALL_{type_potion}_BARREL" in catalog and gold >= catalog[f"SMALL_{type_potion}_BARREL"].price:
         return f"SMALL_{type_potion}_BARREL"
     elif f"MINI_{type_potion}_BARREL" in catalog and gold >= catalog[f"MINI_{type_potion}_BARREL"].price:
         return f"MINI_{type_potion}_BARREL"
@@ -82,6 +81,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             if color != None:
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold - {barrel.price}"))
                 connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_{color}_ml = num_{color}_ml + {barrel.ml_per_barrel}"))
+                print(f"Added potion ML: {color}  total_ml_stored: {barrel.ml_per_barrel}")
 
     return "OK"
 
@@ -89,7 +89,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
-    print("get_wholesale_purchase_plan")
+    print("get_wholesale_purchase_plan", flush=True)
     catalog = {}
     for barrel in wholesale_catalog:
         catalog[barrel.sku] = barrel
@@ -100,16 +100,15 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     order = get_potion_buying_order()
     purhcase_plan = []
     for type_potion, ml in order.items():
-        print(f"potion: {type_potion}  total_ml: {ml}")
         # change to total potions perhaps
         if ml < 10000:
-            print(gold)
             size = get_size(gold, type_potion, catalog)
             quantity = get_quantity()
-            print(f"purchase: {size} {quantity}")
             if size:
-                purhcase_plan.append([{"sku": size, "quantity": 1}])
+                print(f"purchasing: {size} {quantity}")
+                purhcase_plan.append({"sku": size, "quantity": 1})
                 gold -= catalog[size].price * quantity
+    print(purhcase_plan, flush=True)
     return purhcase_plan
     
 

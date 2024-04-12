@@ -6,12 +6,9 @@ router = APIRouter()
 
 def get_potions():
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_red_potions, num_green_potions, num_blue_potions, num_dark_potions FROM global_inventory"))
-        result = result.fetchone()
-        red_potions = result[0]
-        green_potions = result[1]
-        blue_potions = result[2]
-        dark_potions = result[3]
+        red_potions, green_potions, blue_potions, dark_potions = connection.execute(
+            sqlalchemy.text("""SELECT num_red_potions, num_green_potions, 
+                            num_blue_potions, num_dark_potions FROM global_inventory""")).first()
     return red_potions, green_potions, blue_potions, dark_potions
 
 @router.get("/catalog/", tags=["catalog"])
@@ -23,8 +20,8 @@ def get_catalog():
     # TODO: test
     red, blue, green, dark = get_potions()
     selling_plan = []
-    potions = [("red", red, [1, 0, 0, 0]), ("green", green, [0, 1, 0, 0]), 
-               ("blue", blue, [0, 0, 1, 0]), ("dark", dark, [0, 0, 0, 1])]
+    potions = [("red", red, [100, 0, 0, 0]), ("green", green, [0, 100, 0, 0]), 
+               ("blue", blue, [0, 0, 100, 0]), ("dark", dark, [0, 0, 0, 100])]
     for potion in potions:
         color = potion[0]
         quantity = potion[1]

@@ -16,11 +16,12 @@ def get_inventory():
     """ """
     print("get_inventory", flush=True)
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
-        for row in result:
-            num_potions = row[0]
-            num_ml = row[1]
-            gold = row[2]
+        num_ml, num_potions, gold = connection.execute(sqlalchemy.text("""SELECT (num_green_ml + num_red_ml + num_blue_ml) as total_ml, 
+                                                    (num_green_potions + num_red_potions + num_blue_potions) as total_potions, 
+                                                    (gold) as total_gold 
+                                                    FROM global_inventory 
+                                                    """)).first()
+
     return {"number_of_potions": num_potions, "ml_in_barrels": num_ml, "gold": gold}
 
 # Gets called once a day
