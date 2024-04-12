@@ -55,12 +55,13 @@ def get_gold():
 # ml ber barrel is 2500, 500, 200
 # Prices are 250, 100, 60
 def get_size(gold, type_potion, catalog):
-    print(catalog[f"SMALL_RED_BARREL"].price, flush=True)
+    type_potion = type_potion.upper()
     if f"LARGE_{type_potion}_BARREL" in catalog and gold >= catalog[f"LARGE_{type_potion}_BARREL"].price:
         return f"LARGE_{type_potion}_BARREL"
     elif f"MEDIUM_{type_potion}_BARREL" in catalog and gold >= catalog[f"MEDIUM_{type_potion}_BARREL"].price:
         return f"MEDIUM_{type_potion}_BARREL"
     elif f"SMALL_{type_potion}_BARREL" in catalog and gold >= catalog[f"SMALL_{type_potion}_BARREL"].price:
+        print("testing1")
         return f"SMALL_{type_potion}_BARREL"
     elif f"MINI_{type_potion}_BARREL" in catalog and gold >= catalog[f"MINI_{type_potion}_BARREL"].price:
         return f"MINI_{type_potion}_BARREL"
@@ -102,6 +103,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     for type_potion, ml in order.items():
         # change to total potions perhaps
         if ml < 10000:
+            print(type_potion, ml, gold, flush=True)
             size = get_size(gold, type_potion, catalog)
             quantity = get_quantity()
             if size:
