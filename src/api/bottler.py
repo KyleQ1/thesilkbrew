@@ -56,16 +56,16 @@ def easy_bottle_plan(red_ml, green_ml, blue_ml):
         })
     if green_ml > 100:
         purchase_plan.append({
-            "potion_type": [100, 0, 0, 0],
+            "potion_type": [0, 100, 0, 0],
             "quantity": (green_ml // 100),
         })
     if blue_ml > 100:
         purchase_plan.append({
-            "potion_type": [100, 0, 0, 0],
+            "potion_type": [0, 0, 100, 0],
             "quantity": (blue_ml // 100),
         })
     
-    print(purchase_plan, flush=True)
+    print("Bottling Plan: ", purchase_plan, flush=True)
 
     return purchase_plan
 
