@@ -71,7 +71,7 @@ def easy_bottle_plan(red_ml, green_ml, blue_ml):
 
 def get_ml():
     with db.engine.begin() as connection:
-        return connection.execute(sqlalchemy.text("""SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml FROM global_inventory""")).first()
+        return connection.execute(sqlalchemy.text("""SELECT num_red_ml, num_green_ml, num_blue_ml, num_dark_ml FROM global_inventory""")).first()
 
 
 @router.post("/plan")
