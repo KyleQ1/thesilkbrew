@@ -98,21 +98,53 @@ def create_cart(new_cart: Customer):
 class CartItem(BaseModel):
     quantity: int
 
-
+carttable = []
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
-    """ """
+    """
+    /carts/3/items/FUNKY_POT 
+    """
     print("set_item_quantity")
     print(f"cart_id: {cart_id} item_sku: {item_sku} cart_item: {cart_item}", flush=True)
+    carttable.append({"cart_id": cart_id, "item_sku": item_sku, "quantity": cart_item.quantity})
     return "OK"
 
 
 class CartCheckout(BaseModel):
     payment: str
 
+def get_color(item_sku):
+    if "GREEN" in item_sku:
+        return "green"
+    elif "RED" in item_sku:
+        return "red"
+    elif "BLUE" in item_sku:
+        return "blue"
+    elif "DARK" in item_sku:
+        return "dark"
+    else:
+        return None
+    
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
-    """ """
+    """
+    /carts/3/checkout 
+    """
     print("checkout")
     print(f"cart_id: {cart_id} cart_checkout: {cart_checkout}", flush=True)
-    return {"total_potions_bought": 1, "total_gold_paid": 50}
+    for item in carttable:
+        if item["cart_id"] == cart_id:
+            quantity = item["quantity"]
+            item_sku = item["item_sku"]
+    color = get_color(item_sku)
+        
+    # Link this gold to catalog gold
+
+    gold_paid = 50 * quantity
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text(f"""UPDATE global_inventory SET gold = gold + {gold_paid}"""))
+        if color:
+            connection.execute(sqlalchemy.text(f"""UPDATE global_inventory SET num_{color}_potions = num_{color}_potions - {quantity}"""))
+        else:
+            print("Fuck up color", item_sku=["item_sku"], flush=True)
+    return {"total_potions_bought": quantity, "total_gold_paid": gold_paid}

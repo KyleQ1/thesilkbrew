@@ -30,7 +30,7 @@ def get_catalog():
                 "sku": f"{color.upper()}_POTION_0",
                 "name": f"{color} potion",
                 "quantity": quantity,
-                "price": 49,
+                "price": 50,
                 "potion_type": potion_type,
             })
     return selling_plan
