@@ -17,13 +17,13 @@ class PotionInventory(BaseModel):
     quantity: int
 
 def get_potion_color(potion_type: list[int]):
-    if potion_type == [1, 0, 0, 0]:
+    if potion_type == [100, 0, 0, 0]:
         return "red"
-    elif potion_type == [0, 1, 0, 0]:
+    elif potion_type == [0, 100, 0, 0]:
         return "green"
-    elif potion_type == [0, 0, 1, 0]:
+    elif potion_type == [0, 0, 100, 0]:
         return "blue"
-    elif potion_type == [0, 0, 0, 1]:
+    elif potion_type == [0, 0, 0, 100]:
         return "dark"
     else:
         print("Invalid potion type when bottling", flush=True)
