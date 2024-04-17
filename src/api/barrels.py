@@ -37,7 +37,7 @@ def get_potion_color(potion_type: list[int]):
 def get_potion_buying_order():
     potion_buying_order = {}
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml FROM global_inventory"))
+        result = connection.execute(sqlalchemy.text("SELECT num_green_potions, num_red_potions, num_blue_potions, num_dark_potions FROM global_inventory"))
         result = result.fetchone()
         potion_buying_order["green"] = result[0]
         potion_buying_order["red"] = result[1]
