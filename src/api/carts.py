@@ -88,14 +88,15 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
 
 carttable = []
-id = 0
+updateid = 0
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
+    global updateid
     print("create_cart")
     print(f"new_cart: {new_cart}", flush=True)
-    id += 1
-    return {"cart_id": id}
+    updateid += 1
+    return {"cart_id": updateid}
 
 
 class CartItem(BaseModel):
