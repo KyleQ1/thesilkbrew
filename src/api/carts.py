@@ -87,18 +87,20 @@ def post_visits(visit_id: int, customers: list[Customer]):
     return "OK"
 
 
+carttable = []
+id = 0
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
     print("create_cart")
     print(f"new_cart: {new_cart}", flush=True)
-    return {"cart_id": 1}
+    id += 1
+    return {"cart_id": id}
 
 
 class CartItem(BaseModel):
     quantity: int
 
-carttable = []
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """
@@ -131,7 +133,6 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     /carts/3/checkout 
     """
     print("checkout")
-    print(f"cart_id: {cart_id} cart_checkout: {cart_checkout}", flush=True)
     for item in carttable:
         if item["cart_id"] == cart_id:
             quantity = item["quantity"]
@@ -147,4 +148,5 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             connection.execute(sqlalchemy.text(f"""UPDATE global_inventory SET num_{color}_potions = num_{color}_potions - {quantity}"""))
         else:
             print("Fuck up color", item_sku=["item_sku"], flush=True)
+    print(f"Potions_Solid: {quantity} Profit: {gold_paid}")
     return {"total_potions_bought": quantity, "total_gold_paid": gold_paid}
