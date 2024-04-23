@@ -7,8 +7,11 @@ router = APIRouter()
 def get_potions():
     with db.engine.begin() as connection:
         return connection.execute(
-            sqlalchemy.text("""SELECT num_red_potions, num_green_potions, 
-                            num_blue_potions, num_dark_potions FROM global_inventory""")).first()
+            sqlalchemy.text("""SELECT p.r, p.g, p.b, p.d, p.quantity, p.id, gp.sku, gp.price
+                        FROM potions p
+                        JOIN grab_potions gp ON p.grab_potion_id = gp.id
+                        WHERE p.quantity > 0
+                        ORDER BY p.quantity DESC""")).fetchall()
 
 @router.get("/catalog/", tags=["catalog"])
 def get_catalog():
@@ -17,20 +20,24 @@ def get_catalog():
     """
     print("get_catalog", flush=True)
     # TODO: test
-    red, green, blue, dark = get_potions()
+    print(get_potions())
+    result = get_potions()
     selling_plan = []
-    potions = [("red", red, [100, 0, 0, 0]), ("green", green, [0, 100, 0, 0]), 
-               ("blue", blue, [0, 0, 100, 0]), ("dark", dark, [0, 0, 0, 100])]
-    for potion in potions:
-        color = potion[0]
-        quantity = potion[1]
-        potion_type = potion[2]
-        if quantity > 0:
-            selling_plan.append({
-                "sku": f"{color.upper()}_POTION_0",
-                "name": f"{color} potion",
-                "quantity": quantity,
-                "price": 50,
-                "potion_type": potion_type,
+    for row in result:
+        r, g, b, d, quant, id, sku, price = row
+        selling_plan.append({
+                "sku": sku,
+                "name": f"{sku} potion",
+                "quantity": quant,
+                "price": price,
+                "potion_type": [r, g, b, d],
             })
-    return selling_plan
+        # TODO: Probably don't need a catalog table
+        with db.engine.begin() as connection:
+            connection.execute(sqlalchemy.text("""INSERT INTO catalog
+                                                   (sku, price, potion_id)
+                                                   VALUES (:sku, :price, :id)"""),
+                                                   {"sku": sku, "price": quant, "id": id})
+
+    return_list = sorted(return_list, key = lambda inventory : (inventory["price"], -inventory["quantity"]))
+    return selling_plan[:6]
