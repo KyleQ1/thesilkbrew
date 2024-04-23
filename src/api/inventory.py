@@ -16,11 +16,13 @@ def get_inventory():
     """ """
     print("get_inventory", flush=True)
     with db.engine.begin() as connection:
-        num_ml, num_potions, gold = connection.execute(sqlalchemy.text("""SELECT (num_green_ml + num_red_ml + num_blue_ml) as total_ml, 
-                                                    (num_green_potions + num_red_potions + num_blue_potions) as total_potions, 
-                                                    (gold) as total_gold 
+        num_ml, gold = connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(num_green_ml + num_red_ml + num_blue_ml), 0) as total_ml,
+                                                    COALESCE(sum(gold), 0) as total_gold 
                                                     FROM global_inventory 
                                                     """)).first()
+        num_potions = connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(quantity), 0)
+                                                         as total_potions 
+                                                         from potions""")).first()[0]
 
     return {"number_of_potions": num_potions, "ml_in_barrels": num_ml, "gold": gold}
 
@@ -32,9 +34,26 @@ def get_capacity_plan():
     capacity unit costs 1000 gold.
     """
     print("get_capacity_plan", flush=True)
+    with db.engine.begin() as connection:
+        pot_cap, ml_cap = connection.execute(sqlalchemy.text("""SELECT potion_capacity, ml_capacity 
+                                                FROM capacity 
+                                                WHERE id = 1""")).first()
+        num_ml, gold = connection.execute(sqlalchemy.text("""SELECT sum(num_green_ml + num_red_ml + num_blue_ml) 
+                                                as total_ml,
+                                                sum(gold) as total_gold 
+                                                FROM global_inventory""")).first()[0]
+        num_potions = connection.execute(sqlalchemy.text("""SELECT sum(quantity) 
+                                                         as total_potions 
+                                                         from potions""")).first()[0]
+        
+        if num_potions > pot_cap or num_ml > ml_cap and gold > 1.5 * 1000:
+            pot_cap += 50
+            ml_cap += 10000
+            gold -= 1000
+            
     return {
-        "potion_capacity": 0,
-        "ml_capacity": 0
+        "potion_capacity": pot_cap,
+        "ml_capacity": ml_cap
         }
 
 class CapacityPurchase(BaseModel):
@@ -50,5 +69,16 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     """
     print("deliver_capacity_plan")
     print(f"capacity_purchase: {capacity_purchase} order_id: {order_id}", flush=True)
+    with db.engine.connect() as connection:
+        connection.execute(sqlalchemy.text("""UPDATE capacity 
+                                                SET potion_capacity = :pot_cap, ml_capacity = :ml_cap 
+                                                WHERE id = 1"""), 
+                                                {"pot_cap": capacity_purchase.potion_capacity, 
+                                                 "ml_cap": capacity_purchase.ml_capacity})
+        connection.execute(sqlalchemy.text("""INSERT INTO global_inventory 
+                                                (gold)
+                                                VALUES (:gold)
+                                                """), 
+                                                {"gold": -1000})
 
     return "OK"
