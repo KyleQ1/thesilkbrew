@@ -88,10 +88,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
                                                 VALUES (:customer_name, :character_class, :level)"""),
                                                 {"customer_name": customer.customer_name, 
                                                 "character_class": customer.character_class, "level": customer.level})
-
-
     return "OK"
-
 
 carttable = []
 updateid = 0
