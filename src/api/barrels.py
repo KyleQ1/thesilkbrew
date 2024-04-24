@@ -73,7 +73,7 @@ def get_size(gold, type_potion, catalog):
     return None    
 
 # TODO: Determine total barrels to get based off ml/potions
-def get_quantity(catalog, gold, sku, capacity):
+def get_quantity(catalog, gold, sku, remaining_cap):
     # Takes in catalog sees total barrels left
     max_gold = gold // catalog[sku].price
     max_capacity = capacity // catalog[sku].ml_per_barrel
@@ -81,7 +81,11 @@ def get_quantity(catalog, gold, sku, capacity):
 
 def get_capacity():
     with db.engine.begin() as connection:
-        return connection.execute(sqlalchemy.text("SELECT ml_capacity from capacity")).first()[0]
+        total_ml = connection.execute(sqlalchemy.text("""
+            SELECT COALESCE(SUM(num_red_ml), 0) + COALESCE(SUM(num_green_ml), 0) + 
+            COALESCE(SUM(num_blue_ml), 0) + COALESCE(SUM(num_dark_ml), 0) as total_ml from global_inventory""")).first()[0]
+        cap = connection.execute(sqlalchemy.text("SELECT ml_capacity from capacity")).first()[0]
+        return cap - total_ml
 
 
 @router.post("/deliver/{order_id}")
@@ -121,10 +125,11 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     ml_purchase = 0
     for type_potion, ml in order.items():
         # change to total potions perhaps
-        if ml < get_capacity() - ml_purchase:
+        total_ml_left_storage = get_capacity() - ml_purchase
+        if ml < total_ml_left_storage:
             print(type_potion, ml, gold, flush=True)
             size = get_size(gold, type_potion, catalog)
-            quantity = get_quantity(catalog, size, gold, ml)
+            quantity = get_quantity(catalog, size, gold, total_ml_left_storage)
             if size:
                 print(f"purchasing: {size} {catalog[size].price} {quantity}")
                 purhcase_plan.append({"sku": size, "quantity": 1})
