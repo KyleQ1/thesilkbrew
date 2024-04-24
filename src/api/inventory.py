@@ -11,18 +11,26 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+def get_inv():
+    with db.engine.begin() as connection:
+        return connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(num_green_ml + num_red_ml + num_blue_ml), 0) as total_ml,
+                                                    COALESCE(SUM(gold), 0) as total_gold
+                                                    FROM global_inventory 
+                                                    """)).first()
+
+def get_pot():
+    with db.engine.begin() as connection:
+        return connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(quantity), 0) as total_potions 
+                                                    from potions
+                                                    """)).first()[0]
+
 @router.get("/audit")
 def get_inventory():
     """ """
     print("get_inventory", flush=True)
     with db.engine.begin() as connection:
-        num_ml, gold = connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(num_green_ml + num_red_ml + num_blue_ml), 0) as total_ml,
-                                                    COALESCE(sum(gold), 0) as total_gold 
-                                                    FROM global_inventory 
-                                                    """)).first()
-        num_potions = connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(quantity), 0)
-                                                         as total_potions 
-                                                         from potions""")).first()[0]
+        num_ml, gold = get_inv()
+        num_potions = get_pot()
 
     return {"number_of_potions": num_potions, "ml_in_barrels": num_ml, "gold": gold}
 
@@ -38,18 +46,12 @@ def get_capacity_plan():
         pot_cap, ml_cap = connection.execute(sqlalchemy.text("""SELECT potion_capacity, ml_capacity 
                                                 FROM capacity 
                                                 WHERE id = 1""")).first()
-        num_ml, gold = connection.execute(sqlalchemy.text("""SELECT sum(num_green_ml + num_red_ml + num_blue_ml) 
-                                                as total_ml,
-                                                sum(gold) as total_gold 
-                                                FROM global_inventory""")).first()[0]
-        num_potions = connection.execute(sqlalchemy.text("""SELECT sum(quantity) 
-                                                         as total_potions 
-                                                         from potions""")).first()[0]
+        num_ml, gold = get_inv()
+        num_potions = get_pot()
         
-        if num_potions > pot_cap or num_ml > ml_cap and gold > 1.5 * 1000:
+        if num_potions >= pot_cap or num_ml >= ml_cap and gold > 1.5 * 1000:
             pot_cap += 50
             ml_cap += 10000
-            gold -= 1000
             
     return {
         "potion_capacity": pot_cap,

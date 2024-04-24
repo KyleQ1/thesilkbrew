@@ -34,16 +34,16 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             if grab_potion_id is None:
                 continue  # Skip if no matching potion recipe is found
 
+            # check if potion type exists update else insert
             connection.execute(sqlalchemy.text(f"""INSERT INTO potions (r, g, b, d, quantity, grab_potion_id)
                                                 VALUES (:r, :g, :b, :d, :quantity, :id)"""), 
                                                 [{"r": potion.potion_type[0], "g": potion.potion_type[1], 
                                                     "b": potion.potion_type[2], "d": potion.potion_type[3],
-                                                    "quantity": potion.quantity}])
+                                                    "quantity": potion.quantity, "id": grab_potion_id}])
             connection.execute(sqlalchemy.text(f"""INSERT INTO global_inventory (num_red_ml, num_green_ml, num_blue_ml, num_dark_ml) 
                                                 VALUES (:r, :g, :b, :d)"""), 
                                                 [{"r": -potion.potion_type[0] * potion.quantity, "g": -potion.potion_type[1] * potion.quantity, 
-                                                    "b": -potion.potion_type[2] * potion.quantity, "d": -potion.potion_type[3] * potion.quantity,
-                                                    "id": grab_potion_id}])
+                                                    "b": -potion.potion_type[2] * potion.quantity, "d": -potion.potion_type[3] * potion.quantity}])
 
     return "OK"
 
