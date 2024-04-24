@@ -8,3 +8,5 @@ Overall logic for buying barrels
 
 Visits
 customer_id shop_id timestamp
+
+Have some sort of timestamp table that has the timestamp and the now() time. Then get a delta of 1 hour and join between to get data

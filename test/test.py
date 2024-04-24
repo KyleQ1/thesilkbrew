@@ -22,7 +22,7 @@ class TestBarrels(unittest.TestCase):
     def test_get_wholesale_purchase_plan(self):
         response = requests.post('http://localhost:3000/barrels/plan', json=[
             {"sku": "MINI_RED_BARREL", "ml_per_barrel": 100, "potion_type": [1, 0, 0, 0],  
-             "price": 0, "quantity": 1}], headers=self.header)
+             "price": 1, "quantity": 1}], headers=self.header)
         self.assertEqual(response.status_code, 200)
 
 class TestBottler(unittest.TestCase):

@@ -36,6 +36,7 @@ def get_inventory():
 
     return {"number_of_potions": num_potions, "ml_in_barrels": num_ml, "gold": gold}
 
+# supposed to return 1 and each costs 1000
 # Gets called once a day
 @router.post("/plan")
 def get_capacity_plan():
