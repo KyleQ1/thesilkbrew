@@ -19,8 +19,8 @@ def reset():
     print("reset")
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE global_inventory, carts, capacity, cart_items, potions"))
-        connection.execute(sqlalchemy.text("""INSERT INTO capacity (potion_capacity, ml_capacity)
-                                            VALUES (50, 10000)"""))
+        connection.execute(sqlalchemy.text("""INSERT INTO capacity (id, potion_capacity, ml_capacity)
+                                            VALUES (1, 50, 10000)"""))
         connection.execute(sqlalchemy.text("""INSERT INTO global_inventory (gold)
                                             VALUES (100)"""))
     return "OK"
