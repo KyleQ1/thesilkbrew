@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import HTTPException, APIRouter, Depends, Request
 from pydantic import BaseModel
 from src.api import auth
 from enum import Enum
@@ -82,7 +82,13 @@ def post_visits(visit_id: int, customers: list[Customer]):
     Which customers visited the shop today?
     """
     print("post_visits")
-    print(f"visit_id: {visit_id} customers: {customers}", flush=True)
+    with db.engine.begin() as connection:
+        for customer in customers:
+            connection.execute(sqlalchemy.text(f"""INSERT INTO customers (customer_name, character_class, level) 
+                                                VALUES (:customer_name, :character_class, :level)"""),
+                                                {"customer_name": customer.customer_name, 
+                                                "character_class": customer.character_class, "level": customer.level})
+
 
     return "OK"
 
@@ -95,8 +101,14 @@ def create_cart(new_cart: Customer):
     global updateid
     print("create_cart")
     print(f"new_cart: {new_cart}", flush=True)
-    updateid += 1
-    return {"cart_id": updateid}
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(f"""INSERT INTO carts (customer_name, character_class, level) 
+                                               VALUES (:customer_name, :character_class, :level)
+                                                RETURNING id"""), 
+                                               {"customer_name": new_cart.customer_name, 
+                                                "character_class": new_cart.character_class, 
+                                                "level": new_cart.level})
+    return {"cart_id": result.scalar()}
 
 
 class CartItem(BaseModel):
@@ -109,45 +121,66 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """
     print("set_item_quantity")
     print(f"cart_id: {cart_id} item_sku: {item_sku} cart_item: {cart_item}", flush=True)
-    carttable.append({"cart_id": cart_id, "item_sku": item_sku, "quantity": cart_item.quantity})
-    return "OK"
+    # TODO: Check if we have enough potions in stock. Shouldn't be a problem for this project.
 
+    with db.engine.begin() as connection:
+        id = connection.execute(sqlalchemy.text("""SELECT p.id
+                                                FROM potions p
+                                                JOIN grab_potions gp ON gp.id = p.grab_potion_id
+                                                WHERE gp.sku = :sku"""), {"sku": item_sku}).scalar()
+        connection.execute(sqlalchemy.text(f"""INSERT INTO cart_items (cart_id, potion_id, quantity) 
+                                            VALUES (:cart_id, :potion_id, :quantity)"""), 
+                                            {"cart_id": cart_id, "potion_id": id, "quantity": cart_item.quantity})
+    return "OK"
 
 class CartCheckout(BaseModel):
     payment: str
-
-def get_color(item_sku):
-    if "GREEN" in item_sku:
-        return "green"
-    elif "RED" in item_sku:
-        return "red"
-    elif "BLUE" in item_sku:
-        return "blue"
-    elif "DARK" in item_sku:
-        return "dark"
-    else:
-        return None
     
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """
-    /carts/3/checkout 
+    Process a checkout for a given cart_id and apply changes to inventory and global financial records.
     """
-    print("checkout")
-    for item in carttable:
-        if item["cart_id"] == cart_id:
-            quantity = item["quantity"]
-            item_sku = item["item_sku"]
-    color = get_color(item_sku)
-        
-    # Link this gold to catalog gold
+    total_order_quant = 0
+    total_gold = 0
 
-    gold_paid = 50 * quantity
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(f"""UPDATE global_inventory SET gold = gold + {gold_paid}"""))
-        if color:
-            connection.execute(sqlalchemy.text(f"""UPDATE global_inventory SET num_{color}_potions = num_{color}_potions - {quantity}"""))
-        else:
-            print("Fuck up color", item_sku=["item_sku"], flush=True)
-    print(f"Potions_Solid: {quantity} Profit: {gold_paid}")
-    return {"total_potions_bought": quantity, "total_gold_paid": gold_paid}
+        # Fetch all items in the cart and their corresponding potion details from grab_potions
+        items = connection.execute(
+            sqlalchemy.text("""
+                SELECT ci.quantity, gp.price, p.id, p.quantity as potion_quantity
+                FROM cart_items ci
+                JOIN potions p ON p.id = ci.potion_id
+                JOIN grab_potions gp ON gp.id = p.grab_potion_id
+                WHERE ci.cart_id = :cart_id
+            """),
+            {"cart_id": cart_id}
+        ).fetchall()
+
+        if not items:
+            raise HTTPException(status_code=404, detail="No items found in the cart or invalid cart ID")
+
+        for quantity, gold_per_item, p_id, potion_quantity in items:
+
+            total_order_quant += quantity
+            total_gold += quantity * gold_per_item
+            print(quantity, total_gold)
+
+            new_quantity = potion_quantity - quantity
+            if new_quantity > 0:
+                connection.execute(
+                    sqlalchemy.text("UPDATE potions SET quantity = :new_quantity WHERE id = :id"),
+                    {"new_quantity": new_quantity, "id": p_id}
+                )
+            else:
+                connection.execute(
+                    sqlalchemy.text("DELETE FROM potions WHERE id = :id"),
+                    {"id": p_id}
+                )
+
+        connection.execute(
+            sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (:gold)"),
+            {"gold": total_gold}
+        )
+
+    return {"total_potions_bought": total_order_quant, "total_gold_paid": total_gold}

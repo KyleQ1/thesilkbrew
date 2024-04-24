@@ -37,8 +37,14 @@ def get_potion_color(potion_type: list[int]):
 def get_potion_buying_order():
     potion_buying_order = {}
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_potions, num_red_potions, num_blue_potions, num_dark_potions FROM global_inventory"))
-        result = result.fetchone()
+        result = connection.execute(sqlalchemy.text("""
+            SELECT 
+                COALESCE(SUM(num_green_ml), 0) AS sum_green_ml,
+                COALESCE(SUM(num_red_ml), 0) AS sum_red_ml,
+                COALESCE(SUM(num_blue_ml), 0) AS sum_blue_ml,
+                COALESCE(SUM(num_dark_ml), 0) AS sum_dark_ml
+            FROM global_inventory
+                                                    """)).first()
         potion_buying_order["green"] = result[0]
         potion_buying_order["red"] = result[1]
         potion_buying_order["blue"] = result[2]
@@ -48,7 +54,7 @@ def get_potion_buying_order():
 
 def get_gold():
     with db.engine.begin() as connection:
-        return connection.execute(sqlalchemy.text("SELECT gold from global_inventory")).first()[0]
+        return connection.execute(sqlalchemy.text("SELECT sum(gold) from global_inventory")).first()[0]
     
 # Determines which barrels should be bought
 # Prioritizes buying larger barrels as they have higher ROI
@@ -71,6 +77,10 @@ def get_size(gold, type_potion, catalog):
 def get_quantity():
     return 1
 
+def get_capacity():
+    with db.engine.begin() as connection:
+        return connection.execute(sqlalchemy.text("SELECT ml_capacity from capacity")).first()[0]
+
 
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
@@ -79,10 +89,16 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     with db.engine.begin() as connection:
         for barrel in barrels_delivered:
             color = get_potion_color(barrel.potion_type)
+            total_ml = barrel.ml_per_barrel * barrel.quantity
             if color != None:
-                connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold - {barrel.price}"))
-                connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_{color}_ml = num_{color}_ml + {barrel.ml_per_barrel}"))
-                print(f"Added potion ML: {color}  total_ml_stored: {barrel.ml_per_barrel}")
+                connection.execute(sqlalchemy.text(f"""INSERT INTO global_inventory 
+                                                   (gold, num_{color}_ml) 
+                                                   VALUES (:gold, :num_{color}_ml)"""),
+                                                   [{"gold": -barrel.price, f"num_{color}_ml": barrel.ml_per_barrel}])
+                
+                print(f"Added potion ML: {color}  total_ml_stored: {total_ml}")
+            else:
+                print("Barrel color not found", flush=True)
 
     return "OK"
 
@@ -100,17 +116,18 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
     order = get_potion_buying_order()
     purhcase_plan = []
+    ml_purchase = 0
     for type_potion, ml in order.items():
         # change to total potions perhaps
-        if ml < 10000:
+        if ml < get_capacity() - ml_purchase:
             print(type_potion, ml, gold, flush=True)
             size = get_size(gold, type_potion, catalog)
             quantity = get_quantity()
             if size:
-                print(f"purchasing: {size} {quantity}")
+                print(f"purchasing: {size} {catalog[size].price} {quantity}")
                 purhcase_plan.append({"sku": size, "quantity": 1})
                 gold -= catalog[size].price * quantity
-    print(purhcase_plan, flush=True)
+                ml_purchase += ml
     return purhcase_plan
     
 
