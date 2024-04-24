@@ -167,16 +167,10 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             print(quantity, total_gold)
 
             new_quantity = potion_quantity - quantity
-            if new_quantity > 0:
-                connection.execute(
-                    sqlalchemy.text("UPDATE potions SET quantity = :new_quantity WHERE id = :id"),
-                    {"new_quantity": new_quantity, "id": p_id}
-                )
-            else:
-                connection.execute(
-                    sqlalchemy.text("DELETE FROM potions WHERE id = :id"),
-                    {"id": p_id}
-                )
+            connection.execute(
+                sqlalchemy.text("UPDATE potions SET quantity = :new_quantity WHERE id = :id"),
+                {"new_quantity": new_quantity, "id": p_id}
+            )
 
         connection.execute(
             sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (:gold)"),

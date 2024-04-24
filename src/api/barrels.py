@@ -67,7 +67,6 @@ def get_size(gold, type_potion, catalog):
     elif f"MEDIUM_{type_potion}_BARREL" in catalog and gold >= catalog[f"MEDIUM_{type_potion}_BARREL"].price:
         return f"MEDIUM_{type_potion}_BARREL"
     elif f"SMALL_{type_potion}_BARREL" in catalog and gold >= catalog[f"SMALL_{type_potion}_BARREL"].price:
-        print("testing1")
         return f"SMALL_{type_potion}_BARREL"
     elif f"MINI_{type_potion}_BARREL" in catalog and gold >= catalog[f"MINI_{type_potion}_BARREL"].price:
         return f"MINI_{type_potion}_BARREL"
@@ -75,6 +74,7 @@ def get_size(gold, type_potion, catalog):
 
 # TODO: Determine total barrels to get based off ml/potions
 def get_quantity():
+    # Takes in catalog sees total barrels left
     return 1
 
 def get_capacity():

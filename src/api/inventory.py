@@ -13,7 +13,9 @@ router = APIRouter(
 
 def get_inv():
     with db.engine.begin() as connection:
-        return connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(num_green_ml + num_red_ml + num_blue_ml), 0) as total_ml,
+        return connection.execute(sqlalchemy.text("""SELECT 
+                                                  COALESCE(sum(num_green_ml),0) + COALESCE(sum(num_red_ml),0) 
+                                                  + COALESCE(sum(num_blue_ml),0) + COALESCE(sum(num_dark_ml),0) as total_ml,
                                                     COALESCE(SUM(gold), 0) as total_gold
                                                     FROM global_inventory 
                                                     """)).first()
