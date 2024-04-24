@@ -93,9 +93,12 @@ def post_visits(visit_id: int, customers: list[Customer]):
     return "OK"
 
 
+carttable = []
+updateid = 0
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
+    global updateid
     print("create_cart")
     print(f"new_cart: {new_cart}", flush=True)
     with db.engine.begin() as connection:
