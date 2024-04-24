@@ -124,19 +124,18 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     purhcase_plan = []
     ml_purchase = 0
 
-
     for type_potion, ml in order.items():
         # change to total potions perhaps
         total_ml_left_storage = get_capacity() - ml_purchase
-        if ml < total_ml_left_storage:
-            print(type_potion, ml, gold, flush=True)
-            size = get_size(gold, type_potion, catalog)
-            quantity = get_quantity(catalog, size, gold, total_ml_left_storage)
-            if size:
-                print(f"purchasing: {size} {catalog[size].price} {quantity}")
-                purhcase_plan.append({"sku": size, "quantity": 1})
-                gold -= catalog[size].price * quantity
-                ml_purchase += catalog[size].ml_per_barrel * quantity
+        print(type_potion, ml, gold, flush=True)
+        size = get_size(gold, type_potion, catalog)
+        quantity = get_quantity(catalog, size, gold, total_ml_left_storage)
+        
+        if size and quantity > 0:
+            print(f"purchasing: {size} {catalog[size].price} {quantity}")
+            purhcase_plan.append({"sku": size, "quantity": 1})
+            gold -= catalog[size].price * quantity
+            ml_purchase += catalog[size].ml_per_barrel * quantity
     return purhcase_plan
     
 
