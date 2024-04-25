@@ -10,3 +10,5 @@ Visits
 customer_id shop_id timestamp
 
 Have some sort of timestamp table that has the timestamp and the now() time. Then get a delta of 1 hour and join between to get data
+
+Focus on ticks and recording visits. Figure out which class likes to buy what, Which class orders at what day of the week and what time, can get that just based on visits. Plot all this data. Need to record the timestamp. 

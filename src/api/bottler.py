@@ -81,7 +81,7 @@ def efficient_bottle_plan(red_ml, green_ml, blue_ml, dark_ml, potion_capacity):
                 print("Creating potion", potion, flush=True)
                 selected_potions.append(potion)
                 # Create either the maximum number of batches or the potion cap or the max allowed
-                batches_to_produce = min(max_batches, potion_capacity, max_batches_allowed)
+                batches_to_produce = min(max_batches, max_batches_allowed)
                 # Deduct resources based on the number of batches
                 red_ml -= r * batches_to_produce
                 green_ml -= g * batches_to_produce
