@@ -23,7 +23,7 @@ def get_inv():
 def get_pot():
     with db.engine.begin() as connection:
         return connection.execute(sqlalchemy.text("""SELECT COALESCE(sum(quantity), 0) as total_potions 
-                                                    from potions
+                                                    from potion_ledger
                                                     """)).first()[0]
 
 @router.get("/audit")

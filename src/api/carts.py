@@ -121,14 +121,13 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     # TODO: Check if we have enough potions in stock. Shouldn't be a problem for this project.
 
     with db.engine.begin() as connection:
-        id = connection.execute(sqlalchemy.text("""SELECT p.id
-                                                FROM potions p
-                                                JOIN grab_potions gp ON gp.id = p.grab_potion_id
-                                                WHERE gp.sku = :sku AND p.quantity > 0"""), {"sku": item_sku}).scalar()
+        id = connection.execute(sqlalchemy.text("""SELECT id
+                                                FROM grab_potions
+                                                WHERE sku = :sku"""), {"sku": item_sku}).scalar()
         if id is None:
             print("error with catalog or potion table idk")
             raise HTTPException(status_code=404, detail="Potion not found")
-        connection.execute(sqlalchemy.text(f"""INSERT INTO cart_items (cart_id, potion_id, quantity) 
+        connection.execute(sqlalchemy.text(f"""INSERT INTO cart_items (cart_id, grab_potion_id, quantity) 
                                             VALUES (:cart_id, :potion_id, :quantity)"""), 
                                             {"cart_id": cart_id, "potion_id": id, "quantity": cart_item.quantity})
     return "OK"
@@ -141,40 +140,32 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """
     Process a checkout for a given cart_id and apply changes to inventory and global financial records.
     """
-    total_order_quant = 0
-    total_gold = 0
-
+    print("checkout")
     with db.engine.begin() as connection:
         # Fetch all items in the cart and their corresponding potion details from grab_potions
-        items = connection.execute(
+        result = connection.execute(
             sqlalchemy.text("""
-                SELECT ci.quantity, gp.price, p.id, p.quantity as potion_quantity
+                SELECT ci.quantity, gp.price, gp.id
                 FROM cart_items ci
-                JOIN potions p ON p.id = ci.potion_id
-                JOIN grab_potions gp ON gp.id = p.grab_potion_id
+                JOIN grab_potions gp ON gp.id = ci.potion_id
                 WHERE ci.cart_id = :cart_id
             """),
             {"cart_id": cart_id}
-        ).fetchall()
+        ).first()
 
-        if not items:
+        if result == None:
             raise HTTPException(status_code=404, detail="No items found in the cart or invalid cart ID")
 
-        for quantity, gold_per_item, p_id, potion_quantity in items:
-
-            total_order_quant += quantity
-            total_gold += quantity * gold_per_item
-            print(quantity, total_gold)
-
-            new_quantity = potion_quantity - quantity
-            connection.execute(
-                sqlalchemy.text("UPDATE potions SET quantity = :new_quantity WHERE id = :id"),
-                {"new_quantity": new_quantity, "id": p_id}
-            )
-
+        order_quantity, total_gold, gp_id = result
+        print(f"order_quantity: {order_quantity} total_gold: {total_gold} gp_id: {gp_id}", flush=True)
+        connection.execute(
+            sqlalchemy.text("""INSERT INTO potion_ledger (quantity, grab_potion_id)
+                                VALUES (:new_quantity, :id)"""),
+            {"new_quantity": -order_quantity, "id": gp_id}
+        )
         connection.execute(
             sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (:gold)"),
             {"gold": total_gold}
         )
 
-    return {"total_potions_bought": total_order_quant, "total_gold_paid": total_gold}
+    return {"total_potions_bought": order_quantity, "total_gold_paid": total_gold}

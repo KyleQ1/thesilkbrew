@@ -16,9 +16,9 @@ class TestBarrels(unittest.TestCase):
     def test_purchasing(self):
         barrels = [
             {"sku": "MINI_RED_BARREL", "ml_per_barrel": 100, "potion_type": [1, 0, 0, 0],  
-             "price": 100, "quantity": 10}, 
+             "price": 20, "quantity": 10}, 
              {"sku": "MINI_GREEN_BARREL", "ml_per_barrel": 120, "potion_type": [0, 1, 0, 0],
-              "price": 100, "quantity": 10}]
+              "price": 20, "quantity": 10}]
         response = requests.post('http://localhost:3000/barrels/plan', json=barrels, headers=self.header)
         self.assertEqual(response.status_code, 200)
 
@@ -114,7 +114,7 @@ class TestCarts(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         id = response.json()["cart_id"]
         response = requests.post(f"http://localhost:3000/carts/{id}/items/{cat['sku']}", headers=self.header, 
-                                 json={"quantity": min(1, cat["quantity"]-1)})
+                                 json={"quantity": max(1, cat["quantity"]-1)})
         self.assertEqual(response.status_code, 200)
         response = requests.post(f'http://localhost:3000/carts/{id}/checkout', headers=self.header,
                                  json={"payment": "gold"})

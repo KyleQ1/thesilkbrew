@@ -35,11 +35,9 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                 continue  # Skip if no matching potion recipe is found
 
             # check if potion type exists update else insert
-            connection.execute(sqlalchemy.text(f"""INSERT INTO potions (r, g, b, d, quantity, grab_potion_id)
-                                                VALUES (:r, :g, :b, :d, :quantity, :id)"""), 
-                                                [{"r": potion.potion_type[0], "g": potion.potion_type[1], 
-                                                    "b": potion.potion_type[2], "d": potion.potion_type[3],
-                                                    "quantity": potion.quantity, "id": grab_potion_id}])
+            connection.execute(sqlalchemy.text(f"""INSERT INTO potion_ledger (quantity, grab_potion_id)
+                                                VALUES (:quantity, :id)"""), 
+                                                [{"quantity": potion.quantity, "id": grab_potion_id}])
             connection.execute(sqlalchemy.text(f"""INSERT INTO global_inventory (num_red_ml, num_green_ml, num_blue_ml, num_dark_ml) 
                                                 VALUES (:r, :g, :b, :d)"""), 
                                                 [{"r": -potion.potion_type[0] * potion.quantity, "g": -potion.potion_type[1] * potion.quantity, 
@@ -113,7 +111,7 @@ def get_ml():
 def total_potions_left():
     with db.engine.begin() as connection:
         cap = connection.execute(sqlalchemy.text("""SELECT potion_capacity FROM capacity""")).first()[0]
-        total = connection.execute(sqlalchemy.text("""SELECT COALESCE(SUM(quantity), 0) as quant FROM potions""")).first()[0]
+        total = connection.execute(sqlalchemy.text("""SELECT COALESCE(SUM(quantity), 0) as quant FROM potion_ledger""")).first()[0]
         return cap - total
 
 @router.post("/plan")
