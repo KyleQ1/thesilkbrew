@@ -61,6 +61,7 @@ class TestInventory(unittest.TestCase):
     def test_audit(self):
         response = requests.get('http://localhost:3000/inventory/audit', headers=self.header)
         self.assertEqual(response.status_code, 200)
+    # Combine these two tests
     def test_plan(self):
         response = requests.post('http://localhost:3000/inventory/plan', headers=self.header)
         self.assertEqual(response.status_code, 200)
@@ -104,12 +105,16 @@ class TestCarts(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_cart_process(self):
+        catalog = requests.get('http://localhost:3000/catalog')
+        self.assertEqual(catalog.status_code, 200)
+
+        cat = catalog.json()[0]
         response = requests.post('http://localhost:3000/carts/', headers=self.header, 
                                  json={"customer_name": "John Doe", "character_class": "Warrior", "level": 1})
         self.assertEqual(response.status_code, 200)
         id = response.json()["cart_id"]
-        response = requests.post(f'http://localhost:3000/carts/{id}/items/Red', headers=self.header, 
-                                 json={"quantity": 1})
+        response = requests.post(f"http://localhost:3000/carts/{id}/items/{cat['sku']}", headers=self.header, 
+                                 json={"quantity": min(1, cat["quantity"]-1)})
         self.assertEqual(response.status_code, 200)
         response = requests.post(f'http://localhost:3000/carts/{id}/checkout', headers=self.header,
                                  json={"payment": "gold"})
