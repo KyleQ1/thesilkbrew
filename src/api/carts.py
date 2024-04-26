@@ -124,7 +124,10 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
         id = connection.execute(sqlalchemy.text("""SELECT p.id
                                                 FROM potions p
                                                 JOIN grab_potions gp ON gp.id = p.grab_potion_id
-                                                WHERE gp.sku = :sku"""), {"sku": item_sku}).scalar()
+                                                WHERE gp.sku = :sku AND p.quantity > 0"""), {"sku": item_sku}).scalar()
+        if id is None:
+            print("error with catalog or potion table idk")
+            raise HTTPException(status_code=404, detail="Potion not found")
         connection.execute(sqlalchemy.text(f"""INSERT INTO cart_items (cart_id, potion_id, quantity) 
                                             VALUES (:cart_id, :potion_id, :quantity)"""), 
                                             {"cart_id": cart_id, "potion_id": id, "quantity": cart_item.quantity})

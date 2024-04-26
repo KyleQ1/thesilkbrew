@@ -12,18 +12,28 @@ class TestBarrels(unittest.TestCase):
         assert cls.admin_api_key is not None, "API key must not be None"
         cls.base_url = "http://localhost:3000/"
         cls.header = {"access_token": cls.admin_api_key}
-
-    def test_post_deliver(self):
-        response = requests.post('http://localhost:3000/barrels/deliver/1', json=[
-            {"sku": "MINI_RED_BARREL", "ml_per_barrel": 100, "potion_type": [1, 0, 0, 0],  
-             "price": 0, "quantity": 1}], headers=self.header)
-        self.assertEqual(response.status_code, 200)
     
-    def test_get_wholesale_purchase_plan(self):
-        response = requests.post('http://localhost:3000/barrels/plan', json=[
+    def test_purchasing(self):
+        barrels = [
             {"sku": "MINI_RED_BARREL", "ml_per_barrel": 100, "potion_type": [1, 0, 0, 0],  
-             "price": 1, "quantity": 1}], headers=self.header)
+             "price": 100, "quantity": 10}, 
+             {"sku": "MINI_GREEN_BARREL", "ml_per_barrel": 120, "potion_type": [0, 1, 0, 0],
+              "price": 100, "quantity": 10}]
+        response = requests.post('http://localhost:3000/barrels/plan', json=barrels, headers=self.header)
         self.assertEqual(response.status_code, 200)
+
+        purchased_barrels = response.json()
+        adjusted_barrels = []
+        for purchased_barrel in purchased_barrels:
+            for barrel in barrels:
+                if barrel['sku'] == purchased_barrel['sku']:
+                    # Modify the quantity to the purchased quantity for delivery
+                    barrel['quantity'] = purchased_barrel['quantity']
+                    adjusted_barrels.append(barrel)
+    
+        response2 = requests.post('http://localhost:3000/barrels/deliver/1', json=adjusted_barrels, 
+                                  headers=self.header)
+        self.assertEqual(response2.status_code, 200)
 
 class TestBottler(unittest.TestCase):
     @classmethod
@@ -32,15 +42,13 @@ class TestBottler(unittest.TestCase):
         assert cls.admin_api_key is not None, "API key must not be None"
         cls.base_url = "http://localhost:3000/"
         cls.header = {"access_token": cls.admin_api_key}
-
-    def test_post_deliver(self):
-        response = requests.post('http://localhost:3000/bottler/deliver/1', json=[
-            {"potion_type": [100, 0, 0, 0], "quantity": 1}], headers=self.header)
-        self.assertEqual(response.status_code, 200)
     
-    def test_easy_bottle_plan(self):
+    def test_bottling(self):
         response = requests.post('http://localhost:3000/bottler/plan', headers=self.header)
         self.assertEqual(response.status_code, 200)
+        response2 = requests.post('http://localhost:3000/bottler/deliver/1', json=response.json(), 
+                                  headers=self.header)
+        self.assertEqual(response2.status_code, 200)
 
 class TestInventory(unittest.TestCase):
     @classmethod
