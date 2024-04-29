@@ -43,7 +43,7 @@ def get_potion_buying_order():
                 COALESCE(SUM(num_red_ml), 0) AS sum_red_ml,
                 COALESCE(SUM(num_blue_ml), 0) AS sum_blue_ml,
                 COALESCE(SUM(num_dark_ml), 0) AS sum_dark_ml
-            FROM global_inventory
+            FROM inventory_ledger
                                                     """)).first()
         potion_buying_order["green"] = result[0]
         potion_buying_order["red"] = result[1]
@@ -54,7 +54,7 @@ def get_potion_buying_order():
 
 def get_gold():
     with db.engine.begin() as connection:
-        return connection.execute(sqlalchemy.text("SELECT sum(gold) from global_inventory")).first()[0]
+        return connection.execute(sqlalchemy.text("SELECT sum(gold) from inventory_ledger")).first()[0]
     
 # Determines which barrels should be bought
 # Prioritizes buying larger barrels as they have higher ROI
@@ -84,7 +84,7 @@ def get_capacity():
     with db.engine.begin() as connection:
         total_ml = connection.execute(sqlalchemy.text("""
             SELECT COALESCE(SUM(num_red_ml), 0) + COALESCE(SUM(num_green_ml), 0) + 
-            COALESCE(SUM(num_blue_ml), 0) + COALESCE(SUM(num_dark_ml), 0) as total_ml from global_inventory""")).first()[0]
+            COALESCE(SUM(num_blue_ml), 0) + COALESCE(SUM(num_dark_ml), 0) as total_ml from inventory_ledger""")).first()[0]
         cap = connection.execute(sqlalchemy.text("SELECT ml_capacity from capacity")).first()[0]
         return cap - total_ml
 
@@ -98,7 +98,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             color = get_potion_color(barrel.potion_type)
             total_ml = barrel.ml_per_barrel * barrel.quantity
             if color != None:
-                connection.execute(sqlalchemy.text(f"""INSERT INTO global_inventory 
+                connection.execute(sqlalchemy.text(f"""INSERT INTO inventory_ledger 
                                                    (gold, num_{color}_ml) 
                                                    VALUES (:gold, :num_{color}_ml)"""),
                                                    [{"gold": -barrel.price, f"num_{color}_ml": barrel.ml_per_barrel}])

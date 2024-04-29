@@ -26,7 +26,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             print(potion.potion_type)
             # Shit fuck balls
             grab_potion_id = connection.execute(sqlalchemy.text("""
-                SELECT id FROM grab_potions 
+                SELECT id FROM potions 
                 WHERE r = :r AND g = :g AND b = :b AND d = :d
             """), {"r": potion.potion_type[0], "g": potion.potion_type[1],
                    "b": potion.potion_type[2], "d": potion.potion_type[3]}).scalar()
@@ -38,7 +38,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             connection.execute(sqlalchemy.text(f"""INSERT INTO potion_ledger (quantity, grab_potion_id)
                                                 VALUES (:quantity, :id)"""), 
                                                 [{"quantity": potion.quantity, "id": grab_potion_id}])
-            connection.execute(sqlalchemy.text(f"""INSERT INTO global_inventory (num_red_ml, num_green_ml, num_blue_ml, num_dark_ml) 
+            connection.execute(sqlalchemy.text(f"""INSERT INTO inventory_ledger (num_red_ml, num_green_ml, num_blue_ml, num_dark_ml) 
                                                 VALUES (:r, :g, :b, :d)"""), 
                                                 [{"r": -potion.potion_type[0] * potion.quantity, "g": -potion.potion_type[1] * potion.quantity, 
                                                     "b": -potion.potion_type[2] * potion.quantity, "d": -potion.potion_type[3] * potion.quantity}])
@@ -60,7 +60,7 @@ def calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d):
 
 def efficient_bottle_plan(red_ml, green_ml, blue_ml, dark_ml, potion_capacity):
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("""SELECT r, g, b, d, sku FROM grab_potions""")).fetchall()
+        result = connection.execute(sqlalchemy.text("""SELECT r, g, b, d, sku FROM potions""")).fetchall()
         random.shuffle(result)  # Shuffle to randomize initial selection
 
         selected_potions = []
@@ -105,7 +105,7 @@ def get_ml():
                 COALESCE(SUM(num_green_ml), 0) AS sum_green_ml,
                 COALESCE(SUM(num_blue_ml), 0) AS sum_blue_ml,
                 COALESCE(SUM(num_dark_ml), 0) AS sum_dark_ml
-            FROM global_inventory
+            FROM inventory_ledger
 """)).first()
 
 def total_potions_left():

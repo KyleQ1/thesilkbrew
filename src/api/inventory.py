@@ -17,7 +17,7 @@ def get_inv():
                                                   COALESCE(sum(num_green_ml),0) + COALESCE(sum(num_red_ml),0) 
                                                   + COALESCE(sum(num_blue_ml),0) + COALESCE(sum(num_dark_ml),0) as total_ml,
                                                     COALESCE(SUM(gold), 0) as total_gold
-                                                    FROM global_inventory 
+                                                    FROM inventory_ledger 
                                                     """)).first()
 
 def get_pot():
@@ -83,7 +83,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                                                 WHERE id = 1"""), 
                                                 {"pot_cap": capacity_purchase.potion_capacity, 
                                                  "ml_cap": capacity_purchase.ml_capacity})
-        connection.execute(sqlalchemy.text("""INSERT INTO global_inventory 
+        connection.execute(sqlalchemy.text("""INSERT INTO inventory_ledger 
                                                 (gold)
                                                 VALUES (:gold)
                                                 """), 

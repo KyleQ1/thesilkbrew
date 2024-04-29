@@ -122,7 +122,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 
     with db.engine.begin() as connection:
         id = connection.execute(sqlalchemy.text("""SELECT id
-                                                FROM grab_potions
+                                                FROM potions
                                                 WHERE sku = :sku"""), {"sku": item_sku}).scalar()
         if id is None:
             print("error with catalog or potion table idk")
@@ -142,12 +142,12 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """
     print("checkout")
     with db.engine.begin() as connection:
-        # Fetch all items in the cart and their corresponding potion details from grab_potions
+        # Fetch all items in the cart and their corresponding potion details from potions
         result = connection.execute(
             sqlalchemy.text("""
-                SELECT ci.quantity, gp.price, gp.id
+                SELECT ci.quantity, p.price, p.id
                 FROM cart_items ci
-                JOIN grab_potions gp ON gp.id = ci.grab_potion_id
+                JOIN potions p ON p.id = ci.grab_potion_id
                 WHERE ci.cart_id = :cart_id
             """),
             {"cart_id": cart_id}
@@ -165,7 +165,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             {"new_quantity": -order_quantity, "id": gp_id}
         )
         connection.execute(
-            sqlalchemy.text("INSERT INTO global_inventory (gold) VALUES (:gold)"),
+            sqlalchemy.text("INSERT INTO inventory_ledger (gold) VALUES (:gold)"),
             {"gold": total_gold}
         )
 
