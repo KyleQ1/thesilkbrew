@@ -45,6 +45,8 @@ def get_capacity_plan():
     capacity unit costs 1000 gold.
     """
     print("get_capacity_plan", flush=True)
+    pot_cap_send = 0
+    ml_cap_send = 0
     with db.engine.begin() as connection:
         pot_cap, ml_cap = connection.execute(sqlalchemy.text("""SELECT potion_capacity, ml_capacity 
                                                 FROM capacity 
@@ -52,13 +54,14 @@ def get_capacity_plan():
         num_ml, gold = get_inv()
         num_potions = get_pot()
         
-        if num_potions >= pot_cap or num_ml >= ml_cap and gold > 1.5 * 1000:
-            pot_cap += 50
-            ml_cap += 10000
+        # Update potion to be bigger than ml by 1 then scale evenly
+        if num_potions >= pot_cap or num_ml >= ml_cap and gold > 2.5 * 1000:
+            pot_cap_send = 1
+            ml_cap_send = 1
             
     return {
-        "potion_capacity": pot_cap,
-        "ml_capacity": ml_cap
+        "potion_capacity": pot_cap_send,
+        "ml_capacity": ml_cap_send
         }
 
 class CapacityPurchase(BaseModel):
