@@ -156,7 +156,8 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         if result == None:
             raise HTTPException(status_code=404, detail="No items found in the cart or invalid cart ID")
 
-        order_quantity, total_gold, gp_id = result
+        order_quantity, gold, gp_id = result
+        total_gold = order_quantity * gold
         print(f"order_quantity: {order_quantity} total_gold: {total_gold} gp_id: {gp_id}", flush=True)
         connection.execute(
             sqlalchemy.text("""INSERT INTO potion_ledger (quantity, grab_potion_id)
