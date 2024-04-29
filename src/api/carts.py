@@ -127,7 +127,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
         if id is None:
             print("error with catalog or potion table idk")
             raise HTTPException(status_code=404, detail="Potion not found")
-        connection.execute(sqlalchemy.text(f"""INSERT INTO cart_items (cart_id, potion_id, quantity) 
+        connection.execute(sqlalchemy.text(f"""INSERT INTO cart_items (cart_id, grab_potion_id, quantity) 
                                             VALUES (:cart_id, :potion_id, :quantity)"""), 
                                             {"cart_id": cart_id, "potion_id": id, "quantity": cart_item.quantity})
     return "OK"
@@ -147,7 +147,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             sqlalchemy.text("""
                 SELECT ci.quantity, gp.price, gp.id
                 FROM cart_items ci
-                JOIN grab_potions gp ON gp.id = ci.potion_id
+                JOIN grab_potions gp ON gp.id = ci.grab_potion_id
                 WHERE ci.cart_id = :cart_id
             """),
             {"cart_id": cart_id}
