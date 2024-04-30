@@ -14,3 +14,4 @@ Have some sort of timestamp table that has the timestamp and the now() time. The
 Focus on ticks and recording visits. Figure out which class likes to buy what, Which class orders at what day of the week and what time, can get that just based on visits. Plot all this data. Need to record the timestamp. 
 
 Bloomday sells a lot of red potions
+Nobody is buying my green potions on crownsday

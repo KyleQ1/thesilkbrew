@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from src.api import auth
 from enum import Enum
 import sqlalchemy
+from sqlalchemy.orm import Session
 from src import database as db
 
 router = APIRouter(
@@ -26,48 +27,56 @@ def search_orders(
     customer_name: str = "",
     potion_sku: str = "",
     search_page: str = "",
-    sort_col: search_sort_options = search_sort_options.timestamp,
-    sort_order: search_sort_order = search_sort_order.desc,
+    sort_col: str = "timestamp",
+    sort_order: str = "desc"
 ):
-    """
-    Search for cart line items by customer name and/or potion sku.
 
-    Customer name and potion sku filter to orders that contain the 
-    string (case insensitive). If the filters aren't provided, no
-    filtering occurs on the respective search term.
+    query = (
+        sqlalchemy.select(
+            db.cart_items.c.id,
+            db.grab_potions.c.sku,
+            db.carts.c.customer_name,
+            (db.grab_potions.c.price * db.cart_items.c.quantity).label("line_item_total"),
+            db.cart_items.c.created_at
+        ).select_from(
+            db.cart_items.join(db.grab_potions, db.cart_items.c.grab_potion_id == db.grab_potions.c.id)
+                    .join(db.carts, db.cart_items.c.cart_id == db.carts.c.id))
+    )
+   
+    # Applying filters
+    #if customer_name:
+    #    query = query.where(db.carts.c.customer_name.ilike(f"%{customer_name}%"))
+    #if potion_sku:
+    #    query = query.where(db.grab_potions.c.sku.ilike(f"%{potion_sku}%"))
 
-    Search page is a cursor for pagination. The response to this
-    search endpoint will return previous or next if there is a
-    previous or next page of results available. The token passed
-    in that search response can be passed in the next search request
-    as search page to get that page of results.
+    # Sorting
+    #sort = sqlalchemy.desc(db.cart_items.c[sort_col]) if sort_order == 'desc' \
+    #    else sqlalchemy.asc(db.cart_items.c[sort_col])
+    #query = query.order_by(sort)
 
-    Sort col is which column to sort by and sort order is the direction
-    of the search. They default to searching by timestamp of the order
-    in descending order.
+    # Pagination logic
+    #page_size = 5
+    #page_number = int(search_page) if search_page.isdigit() else 0
+    #query = query.limit(page_size).offset(page_number * page_size)
 
-    The response itself contains a previous and next page token (if
-    such pages exist) and the results as an array of line items. Each
-    line item contains the line item id (must be unique), item sku, 
-    customer name, line item total (in gold), and timestamp of the order.
-    Your results must be paginated, the max results you can return at any
-    time is 5 total line items.
-    """
+    # Executing query
+    with db.engine.connect() as connection:
+        results = connection.execute(query).fetchall()
 
-    print("search_orders")
-    print(f"customer_name: {customer_name} potion_sku: {potion_sku} search_page: {search_page} sort_col: {sort_col} sort_order: {sort_order}", flush=True)
+    # Format results
+    formatted_results = [{
+        "line_item_id": result.id,
+        "item_sku": result.sku,
+        "customer_name": result.customer_name,
+        "line_item_total": int(result.line_item_total),  # Ensure conversion to int if needed
+        "timestamp": result.created_at.isoformat(),
+    } for result in results]
+
+    # Pagination response (simplified, not checking for previous/next existence)
     return {
-        "previous": "",
-        "next": "",
-        "results": [
-            {
-                "line_item_id": 1,
-                "item_sku": "1 oblivion potion",
-                "customer_name": "Scaramouche",
-                "line_item_total": 50,
-                "timestamp": "2021-01-01T00:00:00Z",
-            }
-        ],
+        "previous": str(max(0, page_number - 1)),
+        "next": str(page_number + 1) if len(results) == page_size else "",
+        "results": formatted_results
     }
 
 
