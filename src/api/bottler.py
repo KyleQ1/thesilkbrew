@@ -45,6 +45,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
     return "OK"
 
+# Make sure to keep ml in certain batches
 def calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d):
     ingredients_available = [red_ml, green_ml, blue_ml, dark_ml]
     recipe_requirements = [r, g, b, d]

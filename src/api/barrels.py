@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
 from src import database as db
+import random
 
 router = APIRouter(
     prefix="/barrels",
@@ -49,7 +50,12 @@ def get_potion_buying_order():
         potion_buying_order["red"] = result[1]
         potion_buying_order["blue"] = result[2]
         potion_buying_order["dark"] = result[3]
-    potion_buying_order = dict(sorted(potion_buying_order.items(), key=lambda item: item[1]))
+    # check if they are all zero and randomize otherwise sort dict
+    if all(value == 0 for value in potion_buying_order.values()):
+        random.shuffle(potion_buying_order)
+    else:
+        potion_buying_order = dict(sorted(potion_buying_order.items(), key=lambda item: item[1]))
+    
     return potion_buying_order
 
 def get_gold():
