@@ -35,8 +35,8 @@ def get_potion_color(potion_type: list[int]):
 
 # Sort potions needed by total ml stored
 # TODO: Sort using total potions too
-def get_potion_buying_order():
-    potion_buying_order = {}
+def get_barrel_buying_order():
+    barrel_buying_order = {}
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("""
             SELECT 
@@ -46,17 +46,17 @@ def get_potion_buying_order():
                 COALESCE(SUM(num_dark_ml), 0) AS sum_dark_ml
             FROM global_inventory
                                                     """)).first()
-        potion_buying_order["green"] = result[0]
-        potion_buying_order["red"] = result[1]
-        potion_buying_order["blue"] = result[2]
-        potion_buying_order["dark"] = result[3]
+        barrel_buying_order["green"] = result[0]
+        barrel_buying_order["red"] = result[1]
+        barrel_buying_order["blue"] = result[2]
+        barrel_buying_order["dark"] = result[3]
     # check if they are all zero and randomize otherwise sort dict
-    if all(value == 0 for value in potion_buying_order.values()):
-        random.shuffle(potion_buying_order)
+    if all(value == 0 for value in barrel_buying_order.values()):
+        random.shuffle(barrel_buying_order)
     else:
-        potion_buying_order = dict(sorted(potion_buying_order.items(), key=lambda item: item[1]))
+        barrel_buying_order = dict(sorted(barrel_buying_order.items(), key=lambda item: item[1]))
     
-    return potion_buying_order
+    return barrel_buying_order
 
 def get_gold():
     with db.engine.begin() as connection:
@@ -126,7 +126,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     print(f"catalog: {catalog}")
     
     gold = get_gold()
-    order = get_potion_buying_order()
+    order = get_barrel_buying_order()
     purhcase_plan = []
     ml_purchase = 0
 
