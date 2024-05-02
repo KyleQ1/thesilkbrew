@@ -51,10 +51,10 @@ def get_barrel_buying_order():
         barrel_buying_order["blue"] = result[2]
         barrel_buying_order["dark"] = result[3]
     # check if they are all zero and randomize otherwise sort dict
-    if all(value == 0 for value in barrel_buying_order.values()):
-        random.shuffle(barrel_buying_order)
-    else:
-        barrel_buying_order = dict(sorted(barrel_buying_order.items(), key=lambda item: item[1]))
+    #if all(value == 0 for value in barrel_buying_order.values()):
+    #    random.shuffle(barrel_buying_order)
+    #else:
+    barrel_buying_order = dict(sorted(barrel_buying_order.items(), key=lambda item: item[1]))
     
     return barrel_buying_order
 
