@@ -34,30 +34,36 @@ def search_orders(
     query = (
         sqlalchemy.select(
             db.cart_items.c.id,
-            db.grab_potions.c.sku,
+            db.potions.c.sku,
             db.carts.c.customer_name,
-            (db.grab_potions.c.price * db.cart_items.c.quantity).label("line_item_total"),
+            (db.potions.c.price * db.cart_items.c.quantity).label("line_item_total"),
             db.cart_items.c.created_at
         ).select_from(
-            db.cart_items.join(db.grab_potions, db.cart_items.c.grab_potion_id == db.grab_potions.c.id)
+            db.cart_items.join(db.potions, db.cart_items.c.grab_potion_id == db.potions.c.id)
                     .join(db.carts, db.cart_items.c.cart_id == db.carts.c.id))
     )
    
     # Applying filters
-    #if customer_name:
-    #    query = query.where(db.carts.c.customer_name.ilike(f"%{customer_name}%"))
-    #if potion_sku:
-    #    query = query.where(db.grab_potions.c.sku.ilike(f"%{potion_sku}%"))
+    if customer_name:
+        query = query.where(db.carts.c.customer_name.ilike(f"%{customer_name}%"))
+    if potion_sku:
+        query = query.where(db.potions.c.sku.ilike(f"%{potion_sku}%"))
 
     # Sorting
-    #sort = sqlalchemy.desc(db.cart_items.c[sort_col]) if sort_order == 'desc' \
-    #    else sqlalchemy.asc(db.cart_items.c[sort_col])
-    #query = query.order_by(sort)
+    order_function = sqlalchemy.desc if sort_order == 'desc' else sqlalchemy.asc
+    if sort_col == "timestamp":
+        query.order_by(order_function(db.cart_items.c.created_at))
+    elif sort_col == "line_item_total":
+        query.order_by(order_function(sqlalchemy.literal_column("line_item_total")))
+    elif sort_col == "item_sku":
+        query.order_by(order_function(db.potions.c.sku))
+    elif sort_col == "customer_name":
+        query.order_by(order_function(db.carts.c.customer_name))
 
     # Pagination logic
-    #page_size = 5
-    #page_number = int(search_page) if search_page.isdigit() else 0
-    #query = query.limit(page_size).offset(page_number * page_size)
+    page_size = 5
+    page_number = int(search_page) if search_page.isdigit() else 0
+    query = query.limit(page_size).offset(page_number * page_size)
 
     # Executing query
     with db.engine.connect() as connection:

@@ -10,5 +10,5 @@ def database_connection_url():
 engine = create_engine(database_connection_url(), pool_pre_ping=True)
 metadata = MetaData()
 cart_items = Table('cart_items', metadata, autoload_with=engine)
-grab_potions = Table('potions', metadata, autoload_with=engine)
+potions = Table('potions', metadata, autoload_with=engine)
 carts = Table('carts', metadata, autoload_with=engine)
