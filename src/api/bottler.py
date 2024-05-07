@@ -46,7 +46,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     return "OK"
 
 # Make sure to keep ml in certain batches
-def calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d):
+def calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d, potion_capacity):
     ingredients_available = [red_ml, green_ml, blue_ml, dark_ml]
     recipe_requirements = [r, g, b, d]
 
@@ -54,12 +54,12 @@ def calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d):
 
     for available, required in zip(ingredients_available, recipe_requirements):
         if required > 0: # Skip if no ingredient is required
-            max_batches = min(max_batches, available // required)
+            max_batches = min(max_batches, available // required, potion_capacity)
 
     return max_batches
 
 
-def efficient_bottle_plan(red_ml, green_ml, blue_ml, dark_ml, potion_capacity):
+def efficient_bottle_plan(red_ml, green_ml, blue_ml, dark_ml, potion_capacity, potions_left):
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("""SELECT r, g, b, d, sku FROM potions""")).fetchall()
         random.shuffle(result)  # Shuffle to randomize initial selection
@@ -73,9 +73,9 @@ def efficient_bottle_plan(red_ml, green_ml, blue_ml, dark_ml, potion_capacity):
             if len(selected_potions) >= 6 or potion_capacity <= 0:
                 break
 
-            r, g, b, d, sku = potion
+            r, g, b, d = potion
             # Calculate maximum batches for this potion
-            max_batches = calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d)
+            max_batches = calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d, potions_left)
             if max_batches > 0:
                 print("Creating potion", potion, flush=True)
                 selected_potions.append(potion)
@@ -86,8 +86,7 @@ def efficient_bottle_plan(red_ml, green_ml, blue_ml, dark_ml, potion_capacity):
                 green_ml -= g * batches_to_produce
                 blue_ml -= b * batches_to_produce
                 dark_ml -= d * batches_to_produce
-                potion_capacity -= batches_to_produce
-
+                potions_left -= batches_to_produce
 
                 # Append to purchase plan
                 purchase_plan.append({
@@ -113,7 +112,7 @@ def total_potions_left():
     with db.engine.begin() as connection:
         cap = connection.execute(sqlalchemy.text("""SELECT potion_capacity FROM capacity""")).first()[0]
         total = connection.execute(sqlalchemy.text("""SELECT COALESCE(SUM(quantity), 0) as quant FROM potion_ledger""")).first()[0]
-        return cap - total
+        return (cap, cap-total)
 
 @router.post("/plan")
 def get_bottle_plan():
@@ -129,7 +128,7 @@ def get_bottle_plan():
     print("get_bottle_plan", flush=True)
     red, green, blue, dark = get_ml()
 
-    total_potion_inventory = total_potions_left()
-    plan = efficient_bottle_plan(red, green, blue, dark, total_potion_inventory)
+    potion_cap, potions_left = total_potions_left()
+    plan = efficient_bottle_plan(red, green, blue, dark, potion_cap, potions_left)
     print("Bottling Plan: ", plan, flush=True)
     return plan
