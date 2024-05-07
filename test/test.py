@@ -15,10 +15,14 @@ class TestBarrels(unittest.TestCase):
     
     def test_purchasing(self):
         barrels = [
-            {"sku": "MINI_RED_BARREL", "ml_per_barrel": 100, "potion_type": [1, 0, 0, 0],  
-             "price": 20, "quantity": 10}, 
-             {"sku": "MINI_GREEN_BARREL", "ml_per_barrel": 120, "potion_type": [0, 1, 0, 0],
-              "price": 20, "quantity": 10}]
+            {"sku": "MINI_RED_BARREL", "ml_per_barrel": 500, "potion_type": [1, 0, 0, 0],  
+             "price": 100, "quantity": 10}, 
+             {"sku": "MINI_GREEN_BARREL", "ml_per_barrel": 500, "potion_type": [0, 1, 0, 0],
+              "price": 100, "quantity": 10},
+            {"sku": "MINI_RED_BARREL", "ml_per_barrel": 500, "potion_type": [0, 0, 1, 0],
+              "price": 100, "quantity": 10},
+            {"sku": "MINI_DARK_BARREL", "ml_per_barrel": 500, "potion_type": [0, 0, 0, 1],
+              "price": 500, "quantity": 10}]
         response = requests.post('http://localhost:3000/barrels/plan', json=barrels, headers=self.header)
         self.assertEqual(response.status_code, 200)
 
@@ -107,7 +111,6 @@ class TestCarts(unittest.TestCase):
     def test_cart_process(self):
         catalog = requests.get('http://localhost:3000/catalog')
         self.assertEqual(catalog.status_code, 200)
-
         cat = catalog.json()[0]
         response = requests.post('http://localhost:3000/carts/', headers=self.header, 
                                  json={"customer_name": "John Doe", "character_class": "Warrior", "level": 1})

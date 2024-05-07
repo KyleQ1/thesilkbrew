@@ -9,7 +9,7 @@ def get_potions():
         return connection.execute(
             sqlalchemy.text("""SELECT gp.r, gp.g, gp.b, gp.d, sum(p.quantity) as total_quantity, gp.sku, gp.price
                         FROM potion_ledger p
-                        JOIN grab_potions gp ON p.grab_potion_id = gp.id
+                        JOIN potions gp ON p.grab_potion_id = gp.id
                         GROUP BY gp.r, gp.g, gp.b, gp.d, gp.sku, gp.price
                         ORDER BY total_quantity DESC""")).fetchall()
 

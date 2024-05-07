@@ -50,10 +50,13 @@ def get_barrel_buying_order():
         barrel_buying_order["red"] = result[1]
         barrel_buying_order["blue"] = result[2]
         barrel_buying_order["dark"] = result[3]
-    # check if they are all zero and randomize otherwise sort dict
     if all(value == 0 for value in barrel_buying_order.values()):
-        random.shuffle(barrel_buying_order)
+        # If all values are zero, randomize the order
+        keys = list(barrel_buying_order.keys())
+        random.shuffle(keys)
+        barrel_buying_order = {key: barrel_buying_order[key] for key in keys}
     else:
+        # Otherwise, sort the dictionary by values (amounts of ml)
         barrel_buying_order = dict(sorted(barrel_buying_order.items(), key=lambda item: item[1]))
     
     return barrel_buying_order
