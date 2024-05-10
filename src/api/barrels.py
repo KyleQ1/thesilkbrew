@@ -48,8 +48,6 @@ def get_barrel_buying_order():
             FROM inventory_ledger
                                                     """)).first()
         # if ml are zero then randomize buying order by adding to list randomly
-        if all(value == 0 for value in barrel_buying_order.values()):
-
         barrel_buying_order["green"] = result[0]
         barrel_buying_order["red"] = result[1]
         barrel_buying_order["blue"] = result[2]
