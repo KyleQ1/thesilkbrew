@@ -61,8 +61,7 @@ def calculate_max_batches(red_ml, green_ml, blue_ml, dark_ml, r, g, b, d, potion
 
 def efficient_bottle_plan(red_ml, green_ml, blue_ml, dark_ml, potion_capacity, potions_left):
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("""SELECT r, g, b, d, sku FROM potions""")).fetchall()
-        random.shuffle(result)  # Shuffle to randomize initial selection
+        result = connection.execute(sqlalchemy.text("""SELECT r, g, b, d FROM potions""")).fetchall()
 
         selected_potions = []
         purchase_plan = []
