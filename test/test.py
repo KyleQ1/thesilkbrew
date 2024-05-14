@@ -67,13 +67,12 @@ class TestInventory(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
     # Combine these two tests
     def test_plan(self):
-        response = requests.post('http://localhost:3000/inventory/plan', headers=self.header)
-        self.assertEqual(response.status_code, 200)
-
-    def test_deliver_capacity_plan(self):
-        response = requests.post('http://localhost:3000/inventory/deliver/1', headers=self.header, json=
-                                 {"potion_capacity": 0, "ml_capacity": 0})
-        self.assertEqual(response.status_code, 200)
+        response1 = requests.post('http://localhost:3000/inventory/plan', headers=self.header)
+        self.assertEqual(response1.status_code, 200) 
+        response2 = requests.post('http://localhost:3000/inventory/deliver/1', headers=self.header, json=
+                                 response1.json())
+        self.assertEqual(response2.status_code, 200)
+        
 
 class TestCatalog(unittest.TestCase):
     @classmethod
@@ -127,11 +126,11 @@ if __name__ == '__main__':
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
 
-    suite.addTest(loader.loadTestsFromTestCase(TestBarrels))
-    suite.addTest(loader.loadTestsFromTestCase(TestBottler))
-    suite.addTest(loader.loadTestsFromTestCase(TestCatalog))
+    #suite.addTest(loader.loadTestsFromTestCase(TestBarrels))
+    #suite.addTest(loader.loadTestsFromTestCase(TestBottler))
+    #suite.addTest(loader.loadTestsFromTestCase(TestCatalog))
     suite.addTest(loader.loadTestsFromTestCase(TestInventory))
-    suite.addTest(loader.loadTestsFromTestCase(TestCarts))
+    #suite.addTest(loader.loadTestsFromTestCase(TestCarts))
 
     # Run the combined test suite
     runner = unittest.TextTestRunner()

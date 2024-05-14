@@ -55,8 +55,9 @@ def get_capacity_plan():
         num_potions = get_pot()
         
         # Update potion to be bigger than ml by 1 then scale evenly
-        if num_potions >= pot_cap or num_ml >= ml_cap and gold > 2.5 * 1000:
+        if num_potions >= pot_cap * 0.9 and gold > 1.5 * 1000 :
             pot_cap_send = 1
+        if num_ml >= ml_cap * 0.9 and (gold - 1000) > 1.5 * 1000:
             ml_cap_send = 1
             
     return {
@@ -77,16 +78,25 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     """
     print("deliver_capacity_plan")
     print(f"capacity_purchase: {capacity_purchase} order_id: {order_id}", flush=True)
-    with db.engine.connect() as connection:
-        connection.execute(sqlalchemy.text("""UPDATE capacity 
-                                                SET potion_capacity = :pot_cap, ml_capacity = :ml_cap 
-                                                WHERE id = 1"""), 
-                                                {"pot_cap": capacity_purchase.potion_capacity, 
-                                                 "ml_cap": capacity_purchase.ml_capacity})
-        connection.execute(sqlalchemy.text("""INSERT INTO inventory_ledger 
-                                                (gold)
-                                                VALUES (:gold)
-                                                """), 
-                                                {"gold": -1000})
+    if capacity_purchase.potion_capacity > 0 or capacity_purchase.ml_capacity > 0:
+        with db.engine.connect() as connection:
+            ml_cap, pot_cap = connection.execute(sqlalchemy.text("""SELECT ml_capacity, potion_capacity 
+                                                FROM capacity 
+                                                WHERE id = 1
+                                                FOR UPDATE""")).first()
+            new_ml_cap = ml_cap + capacity_purchase.ml_capacity * 10000
+            new_pot_cap = pot_cap + capacity_purchase.potion_capacity * 50
+            new_gold = -1000 * (capacity_purchase.ml_capacity + capacity_purchase.potion_capacity)
+            print(f"new_ml_cap: {new_ml_cap} new_pot_cap: {new_pot_cap} new_gold: {new_gold}", flush=True)
+            connection.execute(sqlalchemy.text("""UPDATE capacity 
+                                                    SET potion_capacity = :pot_cap, ml_capacity = :ml_cap 
+                                                    WHERE id = 1"""), 
+                                                    {"pot_cap": new_pot_cap, 
+                                                    "ml_cap": new_ml_cap})
+            connection.execute(sqlalchemy.text("""INSERT INTO inventory_ledger 
+                                                    (gold)
+                                                    VALUES (:gold)
+                                                    """), 
+                                                    {"gold": new_gold})
 
     return "OK"
