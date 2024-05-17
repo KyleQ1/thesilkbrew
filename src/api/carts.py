@@ -120,7 +120,7 @@ def create_cart(new_cart: Customer):
                                                {"customer_name": new_cart.customer_name, 
                                                 "character_class": new_cart.character_class, 
                                                 "level": new_cart.level})
-    return {"cart_id": result.scalar()}
+        return {"cart_id": result.scalar()}
 
 
 class CartItem(BaseModel):
