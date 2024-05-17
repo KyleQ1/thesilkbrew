@@ -133,6 +133,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     
     gold = get_gold()
     order = get_barrel_buying_order()
+    print("Buying order: ", order, flush=True)
     purhcase_plan = []
     ml_purchase = 0
 
@@ -149,6 +150,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 purhcase_plan.append({"sku": size, "quantity": quantity})
                 gold -= catalog[size].price * quantity
                 ml_purchase += catalog[size].ml_per_barrel * quantity
+    print("Purchase_Plan: ", purhcase_plan, flush=True)
     return purhcase_plan
     
 

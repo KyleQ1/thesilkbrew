@@ -126,11 +126,11 @@ if __name__ == '__main__':
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
 
-    #suite.addTest(loader.loadTestsFromTestCase(TestBarrels))
-    #suite.addTest(loader.loadTestsFromTestCase(TestBottler))
-    #suite.addTest(loader.loadTestsFromTestCase(TestCatalog))
+    suite.addTest(loader.loadTestsFromTestCase(TestBarrels))
+    suite.addTest(loader.loadTestsFromTestCase(TestBottler))
+    suite.addTest(loader.loadTestsFromTestCase(TestCatalog))
     suite.addTest(loader.loadTestsFromTestCase(TestInventory))
-    #suite.addTest(loader.loadTestsFromTestCase(TestCarts))
+    suite.addTest(loader.loadTestsFromTestCase(TestCarts))
 
     # Run the combined test suite
     runner = unittest.TextTestRunner()
