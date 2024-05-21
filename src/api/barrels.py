@@ -109,13 +109,14 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         for barrel in barrels_delivered:
             color = get_potion_color(barrel.potion_type)
             total_ml = barrel.ml_per_barrel * barrel.quantity
+            total_price = barrel.price * barrel.quantity
             if color != None:
                 connection.execute(sqlalchemy.text(f"""INSERT INTO inventory_ledger 
                                                    (gold, num_{color}_ml) 
                                                    VALUES (:gold, :num_{color}_ml)"""),
-                                                   [{"gold": -barrel.price, f"num_{color}_ml": barrel.ml_per_barrel}])
+                                                   [{"gold": -total_price, f"num_{color}_ml": total_ml}])
                 
-                print(f"Added potion ML: {color}  total_ml_stored: {total_ml}")
+                print(f"Added barrel ML: {color}  total_ml_stored: {total_ml}")
             else:
                 print("Barrel color not found", flush=True)
 
