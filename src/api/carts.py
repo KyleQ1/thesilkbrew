@@ -184,4 +184,4 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             {"gold": total_gold}
         )
 
-    return {"total_potions_bought": order_quantity, "total_gold_paid": total_gold}
+        return {"total_potions_bought": order_quantity, "total_gold_paid": total_gold}
