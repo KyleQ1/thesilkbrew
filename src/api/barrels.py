@@ -87,7 +87,7 @@ def get_quantity(catalog, gold, sku, remaining_cap):
     # Takes in catalog sees total barrels left
     max_gold = gold // catalog[sku].price
     # Leave room for 3 batches
-    max_capacity = remaining_cap // catalog[sku].ml_per_barrel // 3
+    max_capacity = remaining_cap // catalog[sku].ml_per_barrel
     if gold < 10000:
         return min(1, max_capacity)
     return min(max_gold, max_capacity)
