@@ -88,7 +88,8 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
             print(f"new_ml_cap: {new_ml_cap} new_pot_cap: {new_pot_cap} new_gold: {new_gold}", flush=True)
             
             connection.execute(sqlalchemy.text("""UPDATE capacity 
-                                                    SET potion_capacity = :pot_cap, ml_capacity = :ml_cap"""), 
+                                                    SET potion_capacity = :pot_cap, ml_capacity = :ml_cap
+                                                    where id = 1"""), 
                                                     {"pot_cap": new_pot_cap, 
                                                     "ml_cap": new_ml_cap})
             connection.execute(sqlalchemy.text("""INSERT INTO inventory_ledger 
